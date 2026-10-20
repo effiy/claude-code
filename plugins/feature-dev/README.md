@@ -1,12 +1,33 @@
+---
+title: Feature Development Plugin
+tags:
+  - feature-development
+  - workflow
+  - agent
+  - code-explorer
+  - code-architect
+  - code-reviewer
+  - claude-code
+category: claude-code/plugin
+created: 2025-03-01
+updated: 2026-10-20
+source: claude-code/plugins/feature-dev
+type: plugin
+status: stable
+lifecycle: production
+---
+
 # Feature Development Plugin
 
 A comprehensive, structured workflow for feature development with specialized agents for codebase exploration, architecture design, and quality review.
 
-## Overview
+---
 
-The Feature Development Plugin provides a systematic 7-phase approach to building new features. Instead of jumping straight into code, it guides you through understanding the codebase, asking clarifying questions, designing architecture, and ensuring quality—resulting in better-designed features that integrate seamlessly with your existing code.
+## 💡 概述
 
-## Philosophy
+The Feature Development Plugin provides a systematic 7-phase approach to building new features. Instead of jumping straight into code, it guides you through understanding the codebase, asking clarifying questions, designing architecture, and ensuring quality -- resulting in better-designed features that integrate seamlessly with your existing code.
+
+### Philosophy
 
 Building features requires more than just writing code. You need to:
 - **Understand the codebase** before making changes
@@ -16,7 +37,11 @@ Building features requires more than just writing code. You need to:
 
 This plugin embeds these practices into a structured workflow that runs automatically when you use the `/feature-dev` command.
 
-## Command: `/feature-dev`
+---
+
+## ⚡ 功能
+
+### Command: `/feature-dev`
 
 Launches a guided feature development workflow with 7 distinct phases.
 
@@ -32,9 +57,9 @@ Or simply:
 
 The command will guide you through the entire process interactively.
 
-## The 7-Phase Workflow
+### The 7-Phase Workflow
 
-### Phase 1: Discovery
+#### Phase 1: Discovery
 
 **Goal**: Understand what needs to be built
 
@@ -53,7 +78,7 @@ Claude: Let me understand what you need...
         - Do you have a preferred caching solution?
 ```
 
-### Phase 2: Codebase Exploration
+#### Phase 2: Codebase Exploration
 
 **Goal**: Understand relevant existing code and patterns
 
@@ -82,7 +107,7 @@ Key files to understand:
 - src/config/security.ts:8 - Security configuration
 ```
 
-### Phase 3: Clarifying Questions
+#### Phase 3: Clarifying Questions
 
 **Goal**: Fill in gaps and resolve all ambiguities
 
@@ -110,7 +135,7 @@ Before designing the architecture, I need to clarify:
 
 **Critical**: This phase ensures nothing is ambiguous before design begins.
 
-### Phase 4: Architecture Design
+#### Phase 4: Architecture Design
 
 **Goal**: Design multiple implementation approaches
 
@@ -155,7 +180,7 @@ excessive refactoring, and fits your existing architecture well.
 Which approach would you like to use?
 ```
 
-### Phase 5: Implementation
+#### Phase 5: Implementation
 
 **Goal**: Build the feature
 
@@ -173,7 +198,7 @@ Which approach would you like to use?
 - Uses architecture designed in Phase 4
 - Continuously tracks progress
 
-### Phase 6: Quality Review
+#### Phase 6: Quality Review
 
 **Goal**: Ensure code is simple, DRY, elegant, and functionally correct
 
@@ -207,7 +232,7 @@ All tests pass. Code follows project conventions.
 What would you like to do?
 ```
 
-### Phase 7: Summary
+#### Phase 7: Summary
 
 **Goal**: Document what was accomplished
 
@@ -246,9 +271,9 @@ Suggested next steps:
 - Update documentation
 ```
 
-## Agents
+### Agents
 
-### `code-explorer`
+#### `code-explorer`
 
 **Purpose**: Deeply analyzes existing codebase features by tracing execution paths
 
@@ -270,7 +295,7 @@ Suggested next steps:
 - Architecture insights
 - List of essential files to read
 
-### `code-architect`
+#### `code-architect`
 
 **Purpose**: Designs feature architectures and implementation blueprints
 
@@ -292,7 +317,7 @@ Suggested next steps:
 - Implementation map with specific files
 - Build sequence with phases
 
-### `code-reviewer`
+#### `code-reviewer`
 
 **Purpose**: Reviews code for bugs, quality issues, and project conventions
 
@@ -300,7 +325,7 @@ Suggested next steps:
 - Project guideline compliance (CLAUDE.md)
 - Bug detection
 - Code quality issues
-- Confidence-based filtering (only reports high-confidence issues ≥80)
+- Confidence-based filtering (only reports high-confidence issues >=80)
 
 **When triggered:**
 - Automatically in Phase 6
@@ -312,16 +337,38 @@ Suggested next steps:
 - Specific fixes with file:line references
 - Project guideline references
 
-## Usage Patterns
+---
 
-### Full workflow (recommended for new features):
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+「待补充」
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Usage Patterns
+
+#### Full workflow (recommended for new features):
 ```bash
 /feature-dev Add rate limiting to API endpoints
 ```
 
 Let the workflow guide you through all 7 phases.
 
-### Manual agent invocation:
+#### Manual agent invocation:
 
 **Explore a feature:**
 ```
@@ -338,15 +385,15 @@ Let the workflow guide you through all 7 phases.
 "Launch code-reviewer to check my recent changes"
 ```
 
-## Best Practices
+### Best Practices
 
 1. **Use the full workflow for complex features**: The 7 phases ensure thorough planning
 2. **Answer clarifying questions thoughtfully**: Phase 3 prevents future confusion
 3. **Choose architecture deliberately**: Phase 4 gives you options for a reason
 4. **Don't skip code review**: Phase 6 catches issues before they reach production
-5. **Read the suggested files**: Phase 2 identifies key files—read them to understand context
+5. **Read the suggested files**: Phase 2 identifies key files -- read them to understand context
 
-## When to Use This Plugin
+### When to Use This Plugin
 
 **Use for:**
 - New features that touch multiple files
@@ -360,15 +407,15 @@ Let the workflow guide you through all 7 phases.
 - Well-defined, simple tasks
 - Urgent hotfixes
 
-## Requirements
+### Requirements
 
 - Claude Code installed
 - Git repository (for code review)
 - Project with existing codebase (workflow assumes existing code to learn from)
 
-## Troubleshooting
+### Troubleshooting
 
-### Agents take too long
+#### Agents take too long
 
 **Issue**: Code exploration or architecture agents are slow
 
@@ -377,7 +424,7 @@ Let the workflow guide you through all 7 phases.
 - Agents run in parallel when possible
 - The thoroughness pays off in better understanding
 
-### Too many clarifying questions
+#### Too many clarifying questions
 
 **Issue**: Phase 3 asks too many questions
 
@@ -386,16 +433,16 @@ Let the workflow guide you through all 7 phases.
 - Provide context about constraints upfront
 - Say "whatever you think is best" if truly no preference
 
-### Architecture options overwhelming
+#### Architecture options overwhelming
 
 **Issue**: Too many architecture options in Phase 4
 
 **Solution**:
-- Trust the recommendation—it's based on codebase analysis
+- Trust the recommendation -- it's based on codebase analysis
 - If still unsure, ask for more explanation
 - Pick the pragmatic option when in doubt
 
-## Tips
+### Tips
 
 - **Be specific in your feature request**: More detail = fewer clarifying questions
 - **Trust the process**: Each phase builds on the previous one
@@ -403,10 +450,29 @@ Let the workflow guide you through all 7 phases.
 - **Don't skip phases**: Each phase serves a purpose
 - **Use for learning**: The exploration phase teaches you about your own codebase
 
-## Author
+### Author
 
 Sid Bidasaria (sbidasaria@anthropic.com)
 
-## Version
+### Version
 
 1.0.0
+
+---
+
+## 🚀 快速开始
+
+```bash
+# Start the guided 7-phase feature development workflow
+/feature-dev Add your feature description here
+```
+
+The command will guide you interactively through all 7 phases: Discovery, Codebase Exploration, Clarifying Questions, Architecture Design, Implementation, Quality Review, and Summary.
+
+---
+
+## ⚙️ 技术栈
+
+- Claude Code plugin system
+- Claude agents (code-explorer, code-architect, code-reviewer)
+- Git (for code review and context)

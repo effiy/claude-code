@@ -1,12 +1,33 @@
+---
+title: Code Review Plugin
+tags:
+  - code-review
+  - pull-request
+  - agent
+  - quality
+  - claude-code
+category: claude-code/plugin
+created: 2025-03-01
+updated: 2026-10-20
+source: claude-code/plugins/code-review
+type: plugin
+status: stable
+lifecycle: production
+---
+
 # Code Review Plugin
 
 Automated code review for pull requests using multiple specialized agents with confidence-based scoring to filter false positives.
 
-## Overview
+---
+
+## 💡 概述
 
 The Code Review Plugin automates pull request review by launching multiple agents in parallel to independently audit changes from different perspectives. It uses confidence scoring to filter out false positives, ensuring only high-quality, actionable feedback is posted.
 
-## Commands
+---
+
+## ⚡ 功能
 
 ### `/code-review`
 
@@ -90,145 +111,15 @@ https://github.com/owner/repo/blob/abc123.../src/utils.ts#L23-L28
 - General quality issues (unless in CLAUDE.md)
 - Issues with lint ignore comments
 
-## Installation
+---
 
-This plugin is included in the Claude Code repository. The command is automatically available when using Claude Code.
+## 📊 指標
 
-## Best Practices
+「待补充」
 
-### Using `/code-review`
-- Maintain clear CLAUDE.md files for better compliance checking
-- Trust the 80+ confidence threshold - false positives are filtered
-- Run on all non-trivial pull requests
-- Review agent findings as a starting point for human review
-- Update CLAUDE.md based on recurring review patterns
+---
 
-### When to use
-- All pull requests with meaningful changes
-- PRs touching critical code paths
-- PRs from multiple contributors
-- PRs where guideline compliance matters
-
-### When not to use
-- Closed or draft PRs (automatically skipped anyway)
-- Trivial automated PRs (automatically skipped)
-- Urgent hotfixes requiring immediate merge
-- PRs already reviewed (automatically skipped)
-
-## Workflow Integration
-
-### Standard PR review workflow:
-```bash
-# Create PR with changes
-# Run local review (outputs to terminal)
-/code-review
-
-# Review the automated feedback
-# Make any necessary fixes
-
-# Optionally post as PR comment
-/code-review --comment
-
-# Merge when ready
-```
-
-### As part of CI/CD:
-```bash
-# Trigger on PR creation or update
-# Use --comment flag to post review comments
-/code-review --comment
-# Skip if review already exists
-```
-
-## Requirements
-
-- Git repository with GitHub integration
-- GitHub CLI (`gh`) installed and authenticated
-- CLAUDE.md files (optional but recommended for guideline checking)
-
-## Troubleshooting
-
-### Review takes too long
-
-**Issue**: Agents are slow on large PRs
-
-**Solution**:
-- Normal for large changes - agents run in parallel
-- 4 independent agents ensure thoroughness
-- Consider splitting large PRs into smaller ones
-
-### Too many false positives
-
-**Issue**: Review flags issues that aren't real
-
-**Solution**:
-- Default threshold is 80 (already filters most false positives)
-- Make CLAUDE.md more specific about what matters
-- Consider if the flagged issue is actually valid
-
-### No review comment posted
-
-**Issue**: `/code-review` runs but no comment appears
-
-**Solution**:
-Check if:
-- PR is closed (reviews skipped)
-- PR is draft (reviews skipped)
-- PR is trivial/automated (reviews skipped)
-- PR already has review (reviews skipped)
-- No issues scored ≥80 (no comment needed)
-
-### Link formatting broken
-
-**Issue**: Code links don't render correctly in GitHub
-
-**Solution**:
-Links must follow this exact format:
-```
-https://github.com/owner/repo/blob/[full-sha]/path/file.ext#L[start]-L[end]
-```
-- Must use full SHA (not abbreviated)
-- Must use `#L` notation
-- Must include line range with at least 1 line of context
-
-### GitHub CLI not working
-
-**Issue**: `gh` commands fail
-
-**Solution**:
-- Install GitHub CLI: `brew install gh` (macOS) or see [GitHub CLI installation](https://cli.github.com/)
-- Authenticate: `gh auth login`
-- Verify repository has GitHub remote
-
-## Tips
-
-- **Write specific CLAUDE.md files**: Clear guidelines = better reviews
-- **Include context in PRs**: Helps agents understand intent
-- **Use confidence scores**: Issues ≥80 are usually correct
-- **Iterate on guidelines**: Update CLAUDE.md based on patterns
-- **Review automatically**: Set up as part of PR workflow
-- **Trust the filtering**: Threshold prevents noise
-
-## Configuration
-
-### Adjusting confidence threshold
-
-The default threshold is 80. To adjust, modify the command file at `commands/code-review.md`:
-```markdown
-Filter out any issues with a score less than 80.
-```
-
-Change `80` to your preferred threshold (0-100).
-
-### Customizing review focus
-
-Edit `commands/code-review.md` to add or modify agent tasks:
-- Add security-focused agents
-- Add performance analysis agents
-- Add accessibility checking agents
-- Add documentation quality checks
-
-## Technical Details
+## 🏛️ 设计
 
 ### Agent architecture
 - **2x CLAUDE.md compliance agents**: Redundancy for guideline checks
@@ -249,10 +140,179 @@ Uses `gh` CLI for:
 - Reading git blame and history
 - Posting review comments
 
-## Author
+### Configuration
+
+#### Adjusting confidence threshold
+
+The default threshold is 80. To adjust, modify the command file at `commands/code-review.md`:
+```markdown
+Filter out any issues with a score less than 80.
+```
+
+Change `80` to your preferred threshold (0-100).
+
+#### Customizing review focus
+
+Edit `commands/code-review.md` to add or modify agent tasks:
+- Add security-focused agents
+- Add performance analysis agents
+- Add accessibility checking agents
+- Add documentation quality checks
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Installation
+
+This plugin is included in the Claude Code repository. The command is automatically available when using Claude Code.
+
+### Requirements
+
+- Git repository with GitHub integration
+- GitHub CLI (`gh`) installed and authenticated
+- CLAUDE.md files (optional but recommended for guideline checking)
+
+### Best Practices
+
+#### Using `/code-review`
+- Maintain clear CLAUDE.md files for better compliance checking
+- Trust the 80+ confidence threshold - false positives are filtered
+- Run on all non-trivial pull requests
+- Review agent findings as a starting point for human review
+- Update CLAUDE.md based on recurring review patterns
+
+#### When to use
+- All pull requests with meaningful changes
+- PRs touching critical code paths
+- PRs from multiple contributors
+- PRs where guideline compliance matters
+
+#### When not to use
+- Closed or draft PRs (automatically skipped anyway)
+- Trivial automated PRs (automatically skipped)
+- Urgent hotfixes requiring immediate merge
+- PRs already reviewed (automatically skipped)
+
+### Workflow Integration
+
+#### Standard PR review workflow:
+```bash
+# Create PR with changes
+# Run local review (outputs to terminal)
+/code-review
+
+# Review the automated feedback
+# Make any necessary fixes
+
+# Optionally post as PR comment
+/code-review --comment
+
+# Merge when ready
+```
+
+#### As part of CI/CD:
+```bash
+# Trigger on PR creation or update
+# Use --comment flag to post review comments
+/code-review --comment
+# Skip if review already exists
+```
+
+### Troubleshooting
+
+#### Review takes too long
+
+**Issue**: Agents are slow on large PRs
+
+**Solution**:
+- Normal for large changes - agents run in parallel
+- 4 independent agents ensure thoroughness
+- Consider splitting large PRs into smaller ones
+
+#### Too many false positives
+
+**Issue**: Review flags issues that aren't real
+
+**Solution**:
+- Default threshold is 80 (already filters most false positives)
+- Make CLAUDE.md more specific about what matters
+- Consider if the flagged issue is actually valid
+
+#### No review comment posted
+
+**Issue**: `/code-review` runs but no comment appears
+
+**Solution**:
+Check if:
+- PR is closed (reviews skipped)
+- PR is draft (reviews skipped)
+- PR is trivial/automated (reviews skipped)
+- PR already has review (reviews skipped)
+- No issues scored ≥80 (no comment needed)
+
+#### Link formatting broken
+
+**Issue**: Code links don't render correctly in GitHub
+
+**Solution**:
+Links must follow this exact format:
+```
+https://github.com/owner/repo/blob/[full-sha]/path/file.ext#L[start]-L[end]
+```
+- Must use full SHA (not abbreviated)
+- Must use `#L` notation
+- Must include line range with at least 1 line of context
+
+#### GitHub CLI not working
+
+**Issue**: `gh` commands fail
+
+**Solution**:
+- Install GitHub CLI: `brew install gh` (macOS) or see [GitHub CLI installation](https://cli.github.com/)
+- Authenticate: `gh auth login`
+- Verify repository has GitHub remote
+
+### Tips
+
+- **Write specific CLAUDE.md files**: Clear guidelines = better reviews
+- **Include context in PRs**: Helps agents understand intent
+- **Use confidence scores**: Issues ≥80 are usually correct
+- **Iterate on guidelines**: Update CLAUDE.md based on patterns
+- **Review automatically**: Set up as part of PR workflow
+- **Trust the filtering**: Threshold prevents noise
+
+### Author
 
 Boris Cherny (boris@anthropic.com)
 
-## Version
+### Version
 
 1.0.0
+
+---
+
+## 🚀 快速开始
+
+```bash
+# On a PR branch, run local review (outputs to terminal):
+/code-review
+
+# Post review as PR comment:
+/code-review --comment
+```
+
+---
+
+## ⚙️ 技术栈
+
+- Claude Code plugin system
+- GitHub CLI (`gh`)
+- Git
+- Claude agents (code-review agents, confidence scoring)

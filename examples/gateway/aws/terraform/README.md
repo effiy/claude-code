@@ -1,4 +1,27 @@
-# Claude apps gateway — Terraform (ECS Fargate)
+---
+title: Claude Apps Gateway — Terraform (ECS Fargate)
+tags:
+  - claude
+  - gateway
+  - aws
+  - terraform
+  - ecs
+  - fargate
+  - rds
+  - secrets-manager
+  - alb
+category: deployment
+created: 2025-06-15
+updated: 2026-10-20
+source: claude-code/examples/gateway/aws/terraform
+type: reference
+status: stable
+lifecycle: production
+---
+
+# Claude Apps Gateway — Terraform (ECS Fargate)
+
+## 💡 概述
 
 Terraform equivalent of `../setup.sh`. Lets end-users provision and manage
 the gateway with `terraform apply`. Covers the same scope ([walkthrough](https://code.claude.com/docs/en/claude-apps-gateway-on-aws) §1–7,
@@ -8,7 +31,30 @@ service behind an internal ALB. The VPC and private subnets are walkthrough
 prerequisites, passed in as variables — unlike the GCP example, no network is
 created here.
 
-## Files
+---
+
+## ⚡ 功能
+
+- Terraform provisioning of the full AWS gateway architecture
+- ECS Fargate service behind an internal ALB
+- Private-subnet RDS for PostgreSQL with TLS enforcement
+- Secrets Manager integration for database URL, JWT secret, and OIDC client secret
+- IAM least-privilege roles scoped to Bedrock invoke and secret access
+- ECR repository with immutable tags and push-on-scan
+- Deletion protection on RDS and ALB with configurable guard rails
+- Remote state support via S3 backend
+
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+### Files
 
 | File | Purpose |
 |------|---------|
@@ -18,7 +64,7 @@ created here.
 | `outputs.tf` | ALB DNS name + zone ID, image, roles, DB endpoint |
 | `terraform.tfvars.example` | Copy to `terraform.tfvars` and edit |
 
-## Prerequisites
+### Prerequisites
 
 1. **`../gateway.yaml` created and FULLY filled in** — copy the template first:
    `cp ../gateway.yaml.example ../gateway.yaml`, then replace every `REPLACE_ME`
@@ -38,7 +84,87 @@ created here.
    region the profile spans), with the one-time use case form submitted.
 4. A **remote backend** for shared use (see below). State holds secrets — never commit it.
 
-## Deploy
+### Guard rails
+
+Tuned so accidental deletion is hard but greenfield teardown stays easy:
+
+- `deletion_protection = true` (variable, default true) on RDS and the ALB —
+  blocks accidental deletion; set `false` when you intend to `terraform destroy`.
+  The same switch controls RDS `skip_final_snapshot`, so a protected instance
+  always leaves a final snapshot.
+- ECR tags are **immutable** and **scanned on push** — a deployed tag can never
+  be silently re-pointed at different bytes. For production, also restrict push
+  rights on the repo to your CI / image-promotion pipeline rather than operator
+  credentials.
+- The IAM roles carry only the walkthrough's least-privilege documents: Bedrock
+  invoke on the Anthropic model ARNs (task role) and `secretsmanager:GetSecretValue`
+  on exactly the three secrets this module creates (by ARN) plus the AWS-managed
+  ECS execution policy (execution role). Inline policies are scoped to these
+  roles, so nothing else in the account is touched.
+- TLS everywhere it terminates: the ALB listener pins
+  `ELBSecurityPolicy-TLS13-1-2-2021-06` (no TLS 1.0/1.1), and the store
+  connection uses `sslmode=verify-full` against the RDS CA bundle baked into
+  the image, with `rds.force_ssl=1` enforcing TLS server-side.
+
+### Private access
+
+The ALB is **internal** with `ip_address_type = "ipv4"` (a dual-stack internal
+ALB publishes public-range AAAA records, which the CLI's `/login`
+private-network check rejects), and its security group admits only
+`corporate_cidr` on 443. Reaching it from on-prem requires your existing
+routing into the VPC (Direct Connect / VPN) — **operator / network-team-owned**
+plumbing this module does not create.
+
+After the apply, give developers a privately resolvable hostname: in a Route 53
+private hosted zone, alias the host of `gateway.yaml`'s `public_url` to the ALB
+(`alb_dns_name` / `alb_zone_id` outputs). The ALB's own `*.elb.amazonaws.com`
+name can't carry your ACM certificate, so use your own name.
+
+The tasks run in the private subnets with no public IP; all egress (Bedrock,
+the IdP, Secrets Manager, ECR, CloudWatch Logs) goes through the NAT gateway.
+To keep Bedrock traffic off the public path, create a `bedrock-runtime`
+interface VPC endpoint and point the upstream's `base_url` at it (see
+`../gateway.yaml.example`); the IdP still needs internet egress.
+
+### Remote state (recommended for teams)
+
+Add a backend so state is shared and locked (and out of git):
+
+```hcl
+# backend.tf
+terraform {
+  backend "s3" {
+    bucket       = "<your-tf-state-bucket>"
+    key          = "claude-gateway/ecs"
+    region       = "us-east-1"
+    use_lockfile = true # S3-native locking (Terraform >= 1.10); or set dynamodb_table
+  }
+}
+```
+
+---
+
+## 📁 目录
+
+| File | Purpose |
+|------|---------|
+| `versions.tf` | Provider pins (aws, random) |
+| `variables.tf` | All inputs (defaults match `setup.sh`'s) |
+| `main.tf` | Resources |
+| `outputs.tf` | ALB DNS name + zone ID, image, roles, DB endpoint |
+| `terraform.tfvars.example` | Copy to `terraform.tfvars` and edit |
+
+---
+
+## 🔗 资源
+
+- **Walkthrough**: https://code.claude.com/docs/en/claude-apps-gateway-on-aws
+
+---
+
+## 🚀 快速开始
+
+### Deploy
 
 Terraform creates the ECR repository but does **not** build/push the image, so
 the apply is two passes: a targeted apply to create the repo, then build/push,
@@ -90,7 +216,7 @@ Set in `terraform.tfvars`:
   secret at start; with no version they fail with
   `ResourceInitializationError`). Terraform creates the secret + version from it.
 
-## Tear down
+### Tear down
 
 Tear down a trial with `terraform destroy`: set `deletion_protection = false`,
 run `terraform apply` to record that on RDS and the ALB (and to flip RDS to
@@ -112,65 +238,7 @@ for s in gateway-postgres-url gateway-jwt-secret gateway-oidc-client-secret; do
 done
 ```
 
-## Guard rails
-
-Tuned so accidental deletion is hard but greenfield teardown stays easy:
-
-- `deletion_protection = true` (variable, default true) on RDS and the ALB —
-  blocks accidental deletion; set `false` when you intend to `terraform destroy`.
-  The same switch controls RDS `skip_final_snapshot`, so a protected instance
-  always leaves a final snapshot.
-- ECR tags are **immutable** and **scanned on push** — a deployed tag can never
-  be silently re-pointed at different bytes. For production, also restrict push
-  rights on the repo to your CI / image-promotion pipeline rather than operator
-  credentials.
-- The IAM roles carry only the walkthrough's least-privilege documents: Bedrock
-  invoke on the Anthropic model ARNs (task role) and `secretsmanager:GetSecretValue`
-  on exactly the three secrets this module creates (by ARN) plus the AWS-managed
-  ECS execution policy (execution role). Inline policies are scoped to these
-  roles, so nothing else in the account is touched.
-- TLS everywhere it terminates: the ALB listener pins
-  `ELBSecurityPolicy-TLS13-1-2-2021-06` (no TLS 1.0/1.1), and the store
-  connection uses `sslmode=verify-full` against the RDS CA bundle baked into
-  the image, with `rds.force_ssl=1` enforcing TLS server-side.
-
-## Private access
-
-The ALB is **internal** with `ip_address_type = "ipv4"` (a dual-stack internal
-ALB publishes public-range AAAA records, which the CLI's `/login`
-private-network check rejects), and its security group admits only
-`corporate_cidr` on 443. Reaching it from on-prem requires your existing
-routing into the VPC (Direct Connect / VPN) — **operator / network-team-owned**
-plumbing this module does not create.
-
-After the apply, give developers a privately resolvable hostname: in a Route 53
-private hosted zone, alias the host of `gateway.yaml`'s `public_url` to the ALB
-(`alb_dns_name` / `alb_zone_id` outputs). The ALB's own `*.elb.amazonaws.com`
-name can't carry your ACM certificate, so use your own name.
-
-The tasks run in the private subnets with no public IP; all egress (Bedrock,
-the IdP, Secrets Manager, ECR, CloudWatch Logs) goes through the NAT gateway.
-To keep Bedrock traffic off the public path, create a `bedrock-runtime`
-interface VPC endpoint and point the upstream's `base_url` at it (see
-`../gateway.yaml.example`); the IdP still needs internet egress.
-
-## Remote state (recommended for teams)
-
-Add a backend so state is shared and locked (and out of git):
-
-```hcl
-# backend.tf
-terraform {
-  backend "s3" {
-    bucket       = "<your-tf-state-bucket>"
-    key          = "claude-gateway/ecs"
-    region       = "us-east-1"
-    use_lockfile = true # S3-native locking (Terraform >= 1.10); or set dynamodb_table
-  }
-}
-```
-
-## After deploy
+### After deploy
 
 - `terraform output alb_dns_name` / `alb_zone_id` — create the Route 53 alias.
 - Register `<public_url>/oauth/callback` on the Okta OIDC web app and make sure
@@ -180,3 +248,17 @@ terraform {
   `image_tag` — secrets-only rotations roll the service without a rebuild (the
   task definition stamps a hash of the managed secret values), but a
   `gateway.yaml` edit reaches the container only through the rebuilt image.
+
+---
+
+## ⚙️ 技术栈
+
+- **IaC**: Terraform (aws, random providers)
+- **Compute**: AWS ECS on Fargate
+- **Load Balancer**: Internal ALB (HTTPS, TLS 1.2+)
+- **Database**: Amazon RDS for PostgreSQL (private subnet, TLS enforced)
+- **Secrets**: AWS Secrets Manager
+- **Container Registry**: Amazon ECR (immutable tags)
+- **Auth**: IAM roles (least-privilege), ACM certificate
+- **DNS**: Route 53 private hosted zone
+- **Egress**: NAT gateway, optional VPC endpoint for Bedrock

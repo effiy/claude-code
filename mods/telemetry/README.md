@@ -1,97 +1,95 @@
-# telemetry
+---
+title: telemetry — Claude Code 插件遥测
+tags: [claude-code, plugin, telemetry, builtin, analytics, events, logging]
+category: claude-code-mods
+created: 2025-04-20
+updated: 2026-10-20
+source: claude-code/mods/telemetry
+type: plugin
+status: builtin
+lifecycle: stable
+---
 
-Plugin analytics as a plugin: its hooks on `telemetry.log` and
-`telemetry.mark` are what those two events do, built over the nouns its
-`engine.create` step is handed, and a gate above them serves the plugins
-built into Claude Code alone: a call from a plugin a person installed or an
-administrator listed is refused with a reason (the host stamps every call
-with the plugin that raised it, `next.origin`, and the gate reads its tier).
-On an engine that has no `$.telemetry` of its own the same step adds the
-noun, so the calls exist there too. An entry names where it goes with `to`:
-`anthropic`, the default, is this mod's; one for `collector`, the telemetry
-collector an operator configured, is passed on beneath untouched, and `to`
-is never part of a row.
-`$.telemetry.log({ event, props })` queues one event as one first-party
-row, `tengu_plugin_<event>`; `$.telemetry.mark({ feature, kind, reason?,
-props? })` marks one use of a feature as the CLI's own feature events do,
-`tengu_feature_<kind>` with a `feature_name` and the mark's properties
-beside it. Both resolve once the row is queued. Rows go out in batches: one
-POST to the event-logging ingest with the session's own credential
-(`$.session.authorize()`, resolved for each batch) a few seconds after the
-first row was queued, at once when a hundred wait, and when the session
-ends; a batch the ingest refuses with a server error, a timeout or a rate
-limit is tried once more. A session with no first-party credential, or an
-ingest that still refuses, drops the batch; each outcome is one line in the
-debug log.
+# 💡 概述
 
-Each row carries what the CLI's own rows carry, gathered through `$` once
-a session: an event id, the install's device id and the signed-in account's
-ids from the CLI's global config, the session's id, model, client type,
-entrypoint and interactivity, and an `env` block (platform and
-architecture from one `uname` probe, terminal, shell, package managers and
-runtimes, CI and GitHub Actions, the remote container, the deployment, the
-Linux distribution and kernel, WSL, the working directory's version
-control, and the engine's version, base version and build time from
-`$.session.version()`, left empty on an engine that does not answer it),
-with the repository's remote hash beside the row's properties. What the
-engine alone knows (its runtime's version, the process's memory, the
-request's betas, the subscription tier, the calling agent) is not on `$`,
-and those columns stay empty.
+`telemetry` 是 Claude Code 内建插件，提供 `$.telemetry` noun（`log`、`mark` 两个事件），供内建插件记录第一方分析数据。在引擎自身无 `$.telemetry` 时自动添加该 noun。
 
-It sends nothing wherever the CLI's own analytics are off: under
-`DISABLE_TELEMETRY`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` or
-`DO_NOT_TRACK`, in a test run, on any third-party provider (Bedrock,
-Vertex, Foundry and kin) the host does not manage, on a cloud gateway
-(the environment's switch or the managed policy's login pins), and on a
-deployment with its own OAuth URL. Each is read through `$.env` and
-`$.settings` before every batch, so a session that has since moved to a
-third-party provider or a gateway sends nothing more; when the switches
-cannot be read, nothing is sent either. The row's `user_type` is `ant`
-when `USER_TYPE` says so, else `external`.
+仅服务内建插件：个人安装或管理员列出的插件调用被拒绝。发送行为受 CLI 自身遥测开关控制。
 
-Nothing free-form reaches a row. An event name and every property key is a
-snake_case token; a value is a finite number, a boolean, or a Choice (a
-string named together with the list it is chosen from), under `log` and
-`mark` alike; `mark` takes `ok`, `sad` or `bad`, with a `reason` required on
-the last two and refused on the first. An entry that breaks a rule is
-refused before anything is queued. Of the environment, a variable whose
-value is a secret, or names a person or a host, is read for whether it is
-set and nothing more; a shell is its basename from a closed list.
+---
 
-`hooks/register.ts` is the module; `types/index.d.ts` is the noun's contract,
-the one declaration of `$.telemetry` that this mod's hooks, a mod calling the
-noun and a test answering it all read.
+# ⚡ 功能
 
-## What it hooks
+- **`$.telemetry.log({ event, props })`**：排队一条事件为 `tengu_plugin_<event>` 第一方行。
+- **`$.telemetry.mark({ feature, kind, reason?, props? })`**：标记一次功能使用，生成 `tengu_feature_<kind>` 事件，含 `feature_name` 和附加属性。
+- 两种调用均异步（Promise resolve 在行排队后）。
+- 行批量发送：首次排队后数秒、累积 100 行时、会话结束时各发送一次 POST 请求（使用 `$.session.authorize()` 的凭证）。
+- 发送失败（服务器错误/超时/限流）重试一次；彻底失败则丢弃批次并记录 debug log。
+- 每行携带：event id、设备 ID、账户 ID、会话 ID、model、client type、entrypoint、interactivity、环境信息（platform、architecture、terminal、shell、package managers、CI 检测、Git remote hash 等）。
+- **隐私控制**：事件名和属性 key 限制为 snake_case token；值限制为有限数字、布尔或 Choice；自由文本不允许。
+- **遥测开关**：`DISABLE_TELEMETRY`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`、`DO_NOT_TRACK` 任一设置时停止发送（每次批量前检查）。
+- **第三方 provider**：非 Anthropic 直连（Bedrock、Vertex、Foundry 等）且非 host 管理的场景下不发送。
+- **环境变量脱敏**：值为 secret 或包含人名/主机名的变量仅读取是否设置，不取具体值。
 
-`telemetry.*`, the gate: a caller in the built-in tier (or the engine) goes
-on, any other is refused, and a gate that throws refuses too.
-`telemetry.log` and `telemetry.mark`, beneath the gate: the entry is checked
-and its row queued, the hook answering `{ value }`, or `{ deny }` with the
-reason for an entry that breaks a rule, so the caller's promise rejects
-naming it. `engine.create`: the sender is built over `await next(e)`, and
-the step hands up `{ ...{ telemetry }, ...beneath }`: what is beneath is
-spread last, so its own `telemetry` stands where it has one and this mod's
-is added where it has none; nothing beneath is replaced.
-`session.start`, to learn whether a person is at the prompt; `session.end`,
-to send what still waits.
+---
 
-## What it calls on `$`
+# 🏛️ 设计
 
-`session.authorize`, `session.id`, `session.model`, `session.surfaces`,
-`session.cwd`, `session.repo`, `settings.read`, `env.get` (the switches and
-the describing variables, by literal name), `fs.read`, `fs.list`,
-`fs.exists`, `process.run` (one `sh -c` of `uname` and `command -v`),
-`clock.after`, `clock.sleep`, `http.fetch` and `ui.log` (to the debug log),
-each on the interface the fold handed it.
+## Hook 架构
 
-## Where it runs, whom it serves
+| 事件 | 行为 |
+| --- | --- |
+| `telemetry.*` (gate) | 仅允许 builtin 层（或引擎）通过，其他层调用被拒绝 |
+| `telemetry.log` | 校验 entry 格式、排队行、返回 `{ value }`；不合规 entry 返回 `{ deny }` + 原因 |
+| `telemetry.mark` | 同上；`kind` 只能是 `ok`、`sad`、`bad`，`sad`/`bad` 必须带 `reason`，`ok` 拒绝 `reason` |
+| `engine.create` | 构建 sender，通过 `await next(e)` 后以 spread 方式添加 noun：`{ ...{ telemetry }, ...beneath }`（下层有同名 noun 时保留下层） |
+| `session.start` | 获取交互性状态 |
+| `session.end` | 发送待发送队列 |
 
-This plugin is seated by the CLI itself, on every build whose own analytics
-are on, and nowhere else; it serves the plugins bundled with the CLI and
-refuses every other caller. It is not meant to be installed or loaded with
-`--plugin-dir`; the folder has a manifest so it reads like every other
-plugin, not so it can stand alone. A built-in that calls `$.telemetry`
-where this one is absent finds no such noun, or, on an engine with the noun
-of its own, one whose calls queue nothing; either way that is "no analytics
-here".
+## Noun 契约
+
+`types/index.d.ts` 是 `$.telemetry` 的唯一声明，导出 `Telemetry`、`TelemetryLogEntry`、`TelemetryMarkEntry` 等类型。调用 mod 和测试均读取同一文件。
+
+## `$` 依赖
+
+`session.authorize`、`session.id`、`session.model`、`session.surfaces`、`session.cwd`、`session.repo`、`settings.read`、`env.get`、`fs.read`、`fs.list`、`fs.exists`、`process.run`（`uname` 和 `command -v`）、`clock.after`、`clock.sleep`、`http.fetch`、`ui.log`。
+
+---
+
+# 📁 目录
+
+```
+telemetry/
+├── hooks/
+│   └── register.ts          # 插件入口模块
+├── tests/
+└── types/
+    └── index.d.ts           # $.telemetry 类型声明（noun 契约）
+```
+
+---
+
+# 🔗 资源
+
+- 运行源码（不推荐，仅供开发）：
+  ```sh
+  claude --plugin-dir mods/telemetry
+  ```
+- 测试：`claude plugin test mods/telemetry`
+
+> 注意：此插件由 CLI 自身加载，不应以 `--plugin-dir` 独立使用。该文件夹有 manifest 仅为遵循插件约定，不意味着可独立运行。内建插件在 telemetry 未加载时调用 `$.telemetry` 找到空 noun（无操作）或不存在该 noun——均为 "无分析" 状态。
+
+---
+
+# 🚀 快速开始
+
+此插件为内建模块，CLI 自动加载（在自身遥测开启时）。不需要手动操作。
+
+---
+
+# ⚙️ 技术栈
+
+- TypeScript
+- Claude Code Plugin API (hooks: `telemetry.log`, `telemetry.mark`, `engine.create`, `session.start`, `session.end`)
+- `http.fetch` 批量发送至事件日志 ingest
+- `process.run` 环境探测（`uname`, `command -v`）

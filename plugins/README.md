@@ -1,14 +1,34 @@
+---
+title: Claude Code Plugins
+tags: [plugins, claude-code, extensions, marketplace]
+category: claude-code
+created: 2025-05-01
+updated: 2026-10-20
+source: claude-code/plugins
+type: index
+status: active
+lifecycle: stable
+---
+
 # Claude Code Plugins
 
-This directory contains some official Claude Code plugins that extend functionality through custom commands, agents, and workflows. These are examples of what's possible with the Claude Code plugin system—many more plugins are available through community marketplaces.
+This directory contains some official Claude Code plugins that extend functionality through custom commands, agents, and workflows. These are examples of what's possible with the Claude Code plugin system -- many more plugins are available through community marketplaces.
 
-## What are Claude Code Plugins?
+---
+
+## 💡 概述
+
+### What are Claude Code Plugins?
 
 Claude Code plugins are extensions that enhance Claude Code with custom slash commands, specialized agents, hooks, and MCP servers. Plugins can be shared across projects and teams, providing consistent tooling and workflows.
 
 Learn more in the [official plugins documentation](https://docs.claude.com/en/docs/claude-code/plugins).
 
-## Plugins in This Directory
+---
+
+## ⚡ 功能
+
+### Plugins in This Directory
 
 | Name | Description | Contents |
 |------|-------------|----------|
@@ -26,7 +46,63 @@ Learn more in the [official plugins documentation](https://docs.claude.com/en/do
 | [ralph-wiggum](./ralph-wiggum/) | Interactive self-referential AI loops for iterative development. Claude works on the same task repeatedly until completion | **Commands:** `/ralph-loop`, `/cancel-ralph` - Start/stop autonomous iteration loops<br>**Hook:** Stop - Intercepts exit attempts to continue iteration |
 | [security-guidance](./security-guidance/) | Security reminder hook that warns about potential security issues when editing files | **Hook:** PreToolUse - Monitors 9 security patterns including command injection, XSS, eval usage, dangerous HTML, pickle deserialization, and os.system calls |
 
-## Installation
+---
+
+## 📊 指標
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+### Plugin Structure
+
+Each plugin follows the standard Claude Code plugin structure:
+
+```
+plugin-name/
+├── .claude-plugin/
+│   └── plugin.json          # Plugin metadata
+├── commands/                # Slash commands (optional)
+├── agents/                  # Specialized agents (optional)
+├── skills/                  # Agent Skills (optional)
+├── hooks/                   # Event handlers (optional)
+├── .mcp.json                # External tool configuration (optional)
+└── README.md                # Plugin documentation
+```
+
+### Contributing
+
+When adding new plugins to this directory:
+
+1. Follow the standard plugin structure
+2. Include a comprehensive README.md
+3. Add plugin metadata in `.claude-plugin/plugin.json`
+4. Document all commands and agents
+5. Provide usage examples
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Learn More
+
+- [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code/overview)
+- [Plugin System Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
+- [Agent SDK Documentation](https://docs.claude.com/en/api/agent-sdk/overview)
+
+---
+
+## 🚀 快速开始
+
+### Installation
 
 These plugins are included in the Claude Code repository. To use them in your own projects:
 
@@ -44,34 +120,8 @@ claude
 
 For detailed plugin installation and configuration, see the [official documentation](https://docs.claude.com/en/docs/claude-code/plugins).
 
-## Plugin Structure
+---
 
-Each plugin follows the standard Claude Code plugin structure:
+## ⚙️ 技术栈
 
-```
-plugin-name/
-├── .claude-plugin/
-│   └── plugin.json          # Plugin metadata
-├── commands/                # Slash commands (optional)
-├── agents/                  # Specialized agents (optional)
-├── skills/                  # Agent Skills (optional)
-├── hooks/                   # Event handlers (optional)
-├── .mcp.json                # External tool configuration (optional)
-└── README.md                # Plugin documentation
-```
-
-## Contributing
-
-When adding new plugins to this directory:
-
-1. Follow the standard plugin structure
-2. Include a comprehensive README.md
-3. Add plugin metadata in `.claude-plugin/plugin.json`
-4. Document all commands and agents
-5. Provide usage examples
-
-## Learn More
-
-- [Claude Code Documentation](https://docs.claude.com/en/docs/claude-code/overview)
-- [Plugin System Documentation](https://docs.claude.com/en/docs/claude-code/plugins)
-- [Agent SDK Documentation](https://docs.claude.com/en/api/agent-sdk/overview)
+「待补充」

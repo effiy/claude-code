@@ -1,8 +1,22 @@
+---
+title: Command Development Skill
+tags: [claude-code, skill, commands, slash-commands, frontmatter, plugin-development]
+category: skill
+created: 2025-01-15
+updated: 2026-10-20
+source: plugin-dev toolkit
+type: README
+status: published
+lifecycle: stable
+---
+
 # Command Development Skill
 
-Comprehensive guidance on creating Claude Code slash commands, including file format, frontmatter options, dynamic arguments, and best practices.
+---
 
-## Overview
+## 💡 概述
+
+Comprehensive guidance on creating Claude Code slash commands, including file format, frontmatter options, dynamic arguments, and best practices.
 
 This skill provides knowledge about:
 - Slash command file format and structure
@@ -16,70 +30,7 @@ This skill provides knowledge about:
 - Integration with plugin components (agents, skills, hooks)
 - Validation patterns and error handling
 
-## Skill Structure
-
-### SKILL.md (~2,470 words)
-
-Core skill content covering:
-
-**Fundamentals:**
-- Command basics and locations
-- File format (Markdown with optional frontmatter)
-- YAML frontmatter fields overview
-- Dynamic arguments ($ARGUMENTS and positional)
-- File references (@ syntax)
-- Bash execution (!` syntax)
-- Command organization patterns
-- Best practices and common patterns
-- Troubleshooting
-
-**Plugin-Specific:**
-- ${CLAUDE_PLUGIN_ROOT} environment variable
-- Plugin command discovery and organization
-- Plugin command patterns (configuration, template, multi-script)
-- Integration with plugin components (agents, skills, hooks)
-- Validation patterns (argument, file, resource, error handling)
-
-### References
-
-Detailed documentation:
-
-- **frontmatter-reference.md**: Complete YAML frontmatter field specifications
-  - All field descriptions with types and defaults
-  - When to use each field
-  - Examples and best practices
-  - Validation and common errors
-
-- **plugin-features-reference.md**: Plugin-specific command features
-  - Plugin command discovery and organization
-  - ${CLAUDE_PLUGIN_ROOT} environment variable usage
-  - Plugin command patterns (configuration, template, multi-script)
-  - Integration with plugin agents, skills, and hooks
-  - Validation patterns and error handling
-
-### Examples
-
-Practical command examples:
-
-- **simple-commands.md**: 10 complete command examples
-  - Code review commands
-  - Testing commands
-  - Deployment commands
-  - Documentation generators
-  - Git integration commands
-  - Analysis and research commands
-
-- **plugin-commands.md**: 10 plugin-specific command examples
-  - Simple plugin commands with scripts
-  - Multi-script workflows
-  - Template-based generation
-  - Configuration-driven deployment
-  - Agent and skill integration
-  - Multi-component workflows
-  - Validated input commands
-  - Environment-aware commands
-
-## When This Skill Triggers
+### When This Skill Triggers
 
 Claude Code activates this skill when users:
 - Ask to "create a slash command" or "add a command"
@@ -91,28 +42,13 @@ Claude Code activates this skill when users:
 - Ask about "bash execution in commands"
 - Need command development best practices
 
-## Progressive Disclosure
+---
 
-The skill uses progressive disclosure:
+## ⚡ 功能
 
-1. **SKILL.md** (~2,470 words): Core concepts, common patterns, and plugin features overview
-2. **References** (~13,500 words total): Detailed specifications
-   - frontmatter-reference.md (~1,200 words)
-   - plugin-features-reference.md (~1,800 words)
-   - interactive-commands.md (~2,500 words)
-   - advanced-workflows.md (~1,700 words)
-   - testing-strategies.md (~2,200 words)
-   - documentation-patterns.md (~2,000 words)
-   - marketplace-considerations.md (~2,200 words)
-3. **Examples** (~6,000 words total): Complete working command examples
-   - simple-commands.md
-   - plugin-commands.md
+### Command Basics Quick Reference
 
-Claude loads references and examples as needed based on task.
-
-## Command Basics Quick Reference
-
-### File Format
+#### File Format
 
 ```markdown
 ---
@@ -127,13 +63,13 @@ Command prompt content with:
 - Bash: !`command here`
 ```
 
-### Locations
+#### Locations
 
 - **Project**: `.claude/commands/` (shared with team)
 - **Personal**: `~/.claude/commands/` (your commands)
 - **Plugin**: `plugin-name/commands/` (plugin-specific)
 
-### Key Features
+#### Key Features
 
 **Dynamic arguments:**
 - `$ARGUMENTS` - All arguments as single string
@@ -145,7 +81,7 @@ Command prompt content with:
 **Bash execution:**
 - `!`command`` - Execute and include output
 
-## Frontmatter Fields Quick Reference
+### Frontmatter Fields Quick Reference
 
 | Field | Purpose | Example |
 |-------|---------|---------|
@@ -155,9 +91,9 @@ Command prompt content with:
 | `argument-hint` | Document arguments | `[pr-number] [priority]` |
 | `disable-model-invocation` | Manual-only command | `true` |
 
-## Common Patterns
+### Common Patterns
 
-### Simple Review Command
+#### Simple Review Command
 
 ```markdown
 ---
@@ -167,7 +103,7 @@ description: Review code for issues
 Review this code for quality and potential bugs.
 ```
 
-### Command with Arguments
+#### Command with Arguments
 
 ```markdown
 ---
@@ -178,7 +114,7 @@ argument-hint: [environment] [version]
 Deploy to $1 environment using version $2
 ```
 
-### Command with File Reference
+#### Command with File Reference
 
 ```markdown
 ---
@@ -189,7 +125,7 @@ argument-hint: [file-path]
 Generate documentation for @$1
 ```
 
-### Command with Bash Execution
+#### Command with Bash Execution
 
 ```markdown
 ---
@@ -201,7 +137,7 @@ Current status: !`git status`
 Recent commits: !`git log --oneline -5`
 ```
 
-## Development Workflow
+### Development Workflow
 
 1. **Design command:**
    - Define purpose and scope
@@ -230,7 +166,7 @@ Recent commits: !`git log --oneline -5`
    - Add examples in comments
    - Document requirements
 
-## Best Practices Summary
+### Best Practices Summary
 
 1. **Single responsibility**: One command, one clear purpose
 2. **Clear descriptions**: Make discoverable in `/help`
@@ -240,7 +176,112 @@ Recent commits: !`git log --oneline -5`
 6. **Add comments**: Explain complex logic
 7. **Handle errors**: Consider missing arguments/files
 
-## Status
+---
+
+## 📊 指标
+
+### Skill Content
+
+- **SKILL.md**: ~2,470 words (core concepts, common patterns, plugin features overview)
+- **References**: ~13,500 words total across 7 reference docs
+- **Examples**: ~6,000 words total (simple-commands.md, plugin-commands.md)
+- **Total**: ~21,970 words of documentation and examples
+
+---
+
+## 🏛️ 设计
+
+### Progressive Disclosure
+
+The skill uses progressive disclosure:
+
+1. **SKILL.md** (~2,470 words): Core concepts, common patterns, and plugin features overview
+2. **References** (~13,500 words total): Detailed specifications
+   - frontmatter-reference.md (~1,200 words)
+   - plugin-features-reference.md (~1,800 words)
+   - interactive-commands.md (~2,500 words)
+   - advanced-workflows.md (~1,700 words)
+   - testing-strategies.md (~2,200 words)
+   - documentation-patterns.md (~2,000 words)
+   - marketplace-considerations.md (~2,200 words)
+3. **Examples** (~6,000 words total): Complete working command examples
+   - simple-commands.md
+   - plugin-commands.md
+
+Claude loads references and examples as needed based on task.
+
+---
+
+## 📁 目录
+
+### Skill Structure
+
+#### SKILL.md (~2,470 words)
+
+Core skill content covering:
+
+**Fundamentals:**
+- Command basics and locations
+- File format (Markdown with optional frontmatter)
+- YAML frontmatter fields overview
+- Dynamic arguments ($ARGUMENTS and positional)
+- File references (@ syntax)
+- Bash execution (!` syntax)
+- Command organization patterns
+- Best practices and common patterns
+- Troubleshooting
+
+**Plugin-Specific:**
+- ${CLAUDE_PLUGIN_ROOT} environment variable
+- Plugin command discovery and organization
+- Plugin command patterns (configuration, template, multi-script)
+- Integration with plugin components (agents, skills, hooks)
+- Validation patterns (argument, file, resource, error handling)
+
+#### References
+
+Detailed documentation:
+
+- **frontmatter-reference.md**: Complete YAML frontmatter field specifications
+  - All field descriptions with types and defaults
+  - When to use each field
+  - Examples and best practices
+  - Validation and common errors
+
+- **plugin-features-reference.md**: Plugin-specific command features
+  - Plugin command discovery and organization
+  - ${CLAUDE_PLUGIN_ROOT} environment variable usage
+  - Plugin command patterns (configuration, template, multi-script)
+  - Integration with plugin agents, skills, and hooks
+  - Validation patterns and error handling
+
+#### Examples
+
+Practical command examples:
+
+- **simple-commands.md**: 10 complete command examples
+  - Code review commands
+  - Testing commands
+  - Deployment commands
+  - Documentation generators
+  - Git integration commands
+  - Analysis and research commands
+
+- **plugin-commands.md**: 10 plugin-specific command examples
+  - Simple plugin commands with scripts
+  - Multi-script workflows
+  - Template-based generation
+  - Configuration-driven deployment
+  - Agent and skill integration
+  - Multi-component workflows
+  - Validated input commands
+  - Environment-aware commands
+
+---
+
+## 🔗 资源
+
+### Status
 
 **Completed enhancements:**
 - ✓ Plugin command patterns (${CLAUDE_PLUGIN_ROOT}, discovery, organization)
@@ -253,7 +294,7 @@ Recent commits: !`git log --oneline -5`
 - Documentation patterns (command documentation best practices)
 - Marketplace considerations (publishing and distribution)
 
-## Maintenance
+### Maintenance
 
 To update this skill:
 1. Keep SKILL.md focused on core fundamentals
@@ -263,10 +304,55 @@ To update this skill:
 5. Ensure imperative/infinitive form throughout
 6. Test examples work with current Claude Code
 
-## Version History
+### Version History
 
 **v0.1.0** (2025-01-15):
 - Initial release with basic command fundamentals
 - Frontmatter field reference
 - 10 simple command examples
 - Ready for plugin-specific pattern additions
+
+---
+
+## 🚀 快速开始
+
+### Command Basics Quick Reference
+
+| Feature | Syntax | Example |
+|---------|--------|---------|
+| Arguments | `$ARGUMENTS`, `$1`, `$2` | `Deploy to $1 using $2` |
+| File references | `@path/to/file` | `Review @README.md` |
+| Bash execution | `` `command` `` | `` `git status` `` |
+| Frontmatter | YAML block at top | `description: "My command"` |
+
+### Quick Pattern Examples
+
+**Simple command:**
+```markdown
+---
+description: Review code for issues
+---
+
+Review this code for quality and potential bugs.
+```
+
+**Command with arguments:**
+```markdown
+---
+description: Deploy to environment
+argument-hint: [environment] [version]
+---
+
+Deploy to $1 environment using version $2
+```
+
+---
+
+## ⚙️ 技术栈
+
+- **Format:** Markdown with optional YAML frontmatter
+- **Argument system:** `$ARGUMENTS` (all), `$1`, `$2`, `$3` (positional)
+- **File inclusion:** `@path/to/file` syntax
+- **Bash integration:** `` `command` `` execution syntax
+- **Locations:** `.claude/commands/`, `~/.claude/commands/`, or plugin `commands/` directory
+- **Plugin env:** `${CLAUDE_PLUGIN_ROOT}` for portable plugin paths

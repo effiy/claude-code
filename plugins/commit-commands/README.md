@@ -1,12 +1,34 @@
+---
+title: Commit Commands Plugin
+tags:
+  - git
+  - commit
+  - push
+  - pull-request
+  - workflow
+  - claude-code
+category: claude-code/plugin
+created: 2025-03-01
+updated: 2026-10-20
+source: claude-code/plugins/commit-commands
+type: plugin
+status: stable
+lifecycle: production
+---
+
 # Commit Commands Plugin
 
 Streamline your git workflow with simple commands for committing, pushing, and creating pull requests.
 
-## Overview
+---
+
+## 💡 概述
 
 The Commit Commands Plugin automates common git operations, reducing context switching and manual command execution. Instead of running multiple git commands, use a single slash command to handle your entire workflow.
 
-## Commands
+---
+
+## ⚡ 功能
 
 ### `/commit`
 
@@ -125,41 +147,63 @@ Cleans up local branches that have been deleted from the remote repository.
 - When your local branch list is cluttered with stale branches
 - During regular repository maintenance
 
-## Installation
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+「待补充」
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Installation
 
 This plugin is included in the Claude Code repository. The commands are automatically available when using Claude Code.
 
-## Best Practices
+### Best Practices
 
-### Using `/commit`
+#### Using `/commit`
 - Review the staged changes before committing
 - Let Claude analyze your changes and match your repo's commit style
 - Trust the automated message, but verify it's accurate
 - Use for routine commits during development
 
-### Using `/commit-push-pr`
+#### Using `/commit-push-pr`
 - Use when you're ready to create a PR
 - Ensure all your changes are complete and tested
 - Claude will analyze the full branch history for the PR description
 - Review the PR description and edit if needed
 - Use when you want to minimize context switching
 
-### Using `/clean_gone`
+#### Using `/clean_gone`
 - Run periodically to keep your branch list clean
 - Especially useful after merging multiple PRs
 - Safe to run - only removes branches already deleted remotely
 - Helps maintain a tidy local repository
 
-## Workflow Integration
+### Workflow Integration
 
-### Quick commit workflow:
+#### Quick commit workflow:
 ```bash
 # Write code
 /commit
 # Continue development
 ```
 
-### Feature branch workflow:
+#### Feature branch workflow:
 ```bash
 # Develop feature across multiple commits
 /commit  # First commit
@@ -169,22 +213,22 @@ This plugin is included in the Claude Code repository. The commands are automati
 /commit-push-pr
 ```
 
-### Maintenance workflow:
+#### Maintenance workflow:
 ```bash
 # After several PRs are merged
 /clean_gone
 # Clean workspace ready for next feature
 ```
 
-## Requirements
+### Requirements
 
 - Git must be installed and configured
 - For `/commit-push-pr`: GitHub CLI (`gh`) must be installed and authenticated
 - Repository must be a git repository with a remote
 
-## Troubleshooting
+### Troubleshooting
 
-### `/commit` creates empty commit
+#### `/commit` creates empty commit
 
 **Issue**: No changes to commit
 
@@ -192,7 +236,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 - Ensure you have unstaged or staged changes
 - Run `git status` to verify changes exist
 
-### `/commit-push-pr` fails to create PR
+#### `/commit-push-pr` fails to create PR
 
 **Issue**: `gh pr create` command fails
 
@@ -201,7 +245,7 @@ This plugin is included in the Claude Code repository. The commands are automati
 - Authenticate: `gh auth login`
 - Ensure repository has a GitHub remote
 
-### `/clean_gone` doesn't find branches
+#### `/clean_gone` doesn't find branches
 
 **Issue**: No branches marked as [gone]
 
@@ -209,17 +253,40 @@ This plugin is included in the Claude Code repository. The commands are automati
 - Run `git fetch --prune` to update remote tracking
 - Branches must be deleted from the remote to show as [gone]
 
-## Tips
+### Tips
 
 - **Combine with other tools**: Use `/commit` during development, then `/commit-push-pr` when ready
 - **Let Claude draft messages**: The commit message analysis learns from your repo's style
 - **Regular cleanup**: Run `/clean_gone` weekly to maintain a clean branch list
 - **Review before pushing**: Always review the commit message and changes before pushing
 
-## Author
+### Author
 
 Anthropic (support@anthropic.com)
 
-## Version
+### Version
 
 1.0.0
+
+---
+
+## 🚀 快速开始
+
+```bash
+# Quick commit with auto-generated message
+/commit
+
+# Full workflow: commit, push, and create PR
+/commit-push-pr
+
+# Clean up stale local branches
+/clean_gone
+```
+
+---
+
+## ⚙️ 技术栈
+
+- Git
+- GitHub CLI (`gh`)
+- Claude Code plugin system

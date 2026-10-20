@@ -1,40 +1,48 @@
-# Mods
+---
+title: Claude Code Mods — 内建插件集合
+tags: [claude-code, plugin, mods, hooks, builtin, diff, telemetry, agents-md, sec-default]
+category: claude-code-mods
+created: 2025-04-01
+updated: 2026-10-20
+source: claude-code/mods
+type: plugin-collection
+status: builtin
+lifecycle: early-access
+---
 
-A mod is a Claude Code plugin whose behaviour lives in a hooks module: one
-`register(on, options)` entry that hooks the engine's events as functions
-`($, e, next)`. These four ship inside Claude Code; this folder is their
-source, published as it is built into the binary.
+# 💡 概述
 
-| Mod | What it does | Seated |
+Mod 是一种 Claude Code 插件，其行为完全在 hooks module 中定义：一个 `register(on, options)` 入口 hook 引擎事件为 `($, e, next)` 函数。本目录包含随 Claude Code 内建的 4 个 mod 的源代码，它们随二进制文件一起发布。
+
+| Mod | 功能 | 加载位置 |
 | --- | --- | --- |
-| [`sec-default`](sec-default) | Keeps an organization's classic hooks, prompt content, managed settings, tool policy, permission rules and pinned environment out of reach of the plugins a person installs; adds no policy of its own. | Outermost, on a machine with managed settings or a managed-mcp.json, or for a Team or Enterprise organization, and from then on for the session, unless managed `prependPlugins` says otherwise |
-| [`diff`](diff) | `/diff`: the session's uncommitted changes in a pane beside the transcript, file by file with their hunks, refreshed as Claude edits files and runs commands. | Built in |
-| [`telemetry`](telemetry) | Hooks `$.telemetry`'s two events (`log`, `mark`), adding the noun in the `engine.create` fold where the engine has none, so a built-in plugin can record an event as a first-party analytics row, sent in batches; refuses installed plugins; sends nothing wherever Claude Code's analytics are off. | Built in |
-| [`agents-md`](agents-md) | `AGENTS.md` as project instructions, by one option: loaded where the project has no `CLAUDE.md` of its own (`claude-md-or-agents-md`, the default) or beside it (`claude-md-and-agents-md`), placed and framed exactly as the engine places `CLAUDE.md`, nested ones on a `Read`; or the project's and the person's instruction files dropped and the organization's kept (`managed-only`); or `CLAUDE.md` alone, as the engine reads it (`claude-md`). | Built in |
+| [`sec-default`](sec-default) | 保护组织经典 hooks、prompt 内容、managed settings、工具策略、权限规则和环境变量免受个人安装插件的影响 | 最外层（prepend tier），在存在 managed settings 或 Team/Enterprise 组织时 |
+| [`diff`](diff) | `/diff`：在 transcript 旁显示会话未提交变更的面板 | 内建 |
+| [`telemetry`](telemetry) | 挂载 `$.telemetry` noun（`log`、`mark`），供内建插件记录第一方分析数据 | 内建 |
+| [`agents-md`](agents-md) | `AGENTS.md` 作为 project instructions，四种加载模式 | 内建 |
 
-Each folder is a complete plugin: `.claude-plugin/plugin.json`, a
-`hooks/hooks.json` naming the module, and TypeScript under `hooks/` typed
-against the declarations `/plugin-types` writes (`import type … from
-'claude-code'`), kept here in `types/`. To read one running from source:
+---
 
-    claude --plugin-dir mods/diff
+# ⚡ 功能
 
-## Testing
+- 每个文件夹是一个完整插件：`.claude-plugin/plugin.json` + `hooks/hooks.json` + TypeScript hooks 模块。
+- 类型化开发：hooks 模块以 `import type … from 'claude-code'` 引用 `/plugin-types` 生成的声明文件。
+- 测试框架：`claude plugin test mods/<name>` 在每个 mod 的 `tests/` 目录下运行测试。
+- 全局类型检查：`tsc -p mods/tsconfig.json`。
 
-A mod's tests are in its `tests/` folder, and run with
+---
 
-    claude plugin test mods/diff
+# 🏛️ 设计
 
-A test gets the engine's own `$` and a plugin's `on`. Each call on `$` is one
-the engine makes, through every hook of the mod loaded as it ships. The hooks
-the test registers with `on` sit beneath the mod, where the rest of the world
-would be, and nothing is beneath them: a call they leave unanswered throws,
-naming its event.
+## Noun 契约（Composing Mods）
 
-A test file is named for what it covers under `hooks/` (`register.test.ts`
-beside `hooks/register.ts`, `git.test.ts` beside `hooks/git/`), and holds its
-imports, the tier the mod loads in, and one `describe` titled with that name;
-what several tests share sits under `tests/fixtures/`, one export a file.
+在 `engine.create` fold 中向 `$` 添加 noun 的 mod 拥有该 noun 的类型。类型定义在 `types/index.d.ts` 中（无 import 的声明文件），并扩展 `EngineInterface`。
+
+- **唯一声明**：noun 只在一个地方声明。mod 自身的 hooks 从 `../types` 导入，engine.create 返回的值与 `EngineInterface['nounName']` 类型校验。
+- **调用方读取**：调用另一个 mod noun 的 mod 读取同一文件，从不复制。`mods/tsconfig.json` 通过 `*/types/**/*.d.ts` 包含所有类型。
+- **测试 mock**：调用另一个 mod noun 的测试需要加载一个 provider（inline plugin），在 `engine.create` 中挂载 noun。
+
+## 测试架构
 
 ```ts
 import { describe, expect, mock, test, tier } from 'claude-code/testing'
@@ -42,76 +50,58 @@ import { describe, expect, mock, test, tier } from 'claude-code/testing'
 tier('builtin')
 
 describe('register', () => {
-  test('outside a git repository /diff says so, opens nothing', async ($, on) => {
-    const opened: string[] = []
+  test('...', async ($, on) => {
     mock.clock(on)
     on('session.start', ($, e) => ({ cwd: e.cwd }))
-    on('command.register', ($, e) => ({ value: { command: e.name } }))
-    on('process.run', () => ({
-      value: { exitCode: 128, stdout: '', stderr: 'fatal: not a git repository' },
-    }))
-    on('ui.open', ($, e, next) => {
-      opened.push(e.id)
-      return next(e)
-    })
-
+    // ...
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
-    const { text } = await $.command.run({
-      command: 'diff',
-      args: '',
-      origin: { kind: 'composer' },
-    })
-
-    expect(text).toContain("isn't in a git repository")
-    expect(opened).toEqual([])
+    expect(text).toContain('...')
   })
 })
 ```
 
-The kit's `mock` answers the world beneath the mod from memory, noun by noun,
-each member a plain function over `on` registering hooks where the test calls
-it: `mock.env(on, variables)` for `$.env`, `mock.store(on, entries)` for
-`$.store`, and `mock.clock(on)` for `$.clock`, whose `advance(ms)` resolves
-every wait the mod asked for (`$.clock.sleep`, `after`, `every`) as the clock
-crosses it. To see what a dispatch does before it answers, start it
-unawaited, `await clock.settle()`, then look: the clock stays where it was.
-`$.ui.press({ plugin, key })` presses a `Button` the test rendered, as a
-click in the terminal does.
+Mock 工具：`mock.env(on, variables)`、`mock.store(on, entries)`、`mock.clock(on)`（`advance(ms)` 解决所有等待）、`$.ui.press({ plugin, key })`。
 
-`tsc -p mods/tsconfig.json` typechecks every mod's hooks and tests against
-`types/` and each mod's own `types/` contract.
+---
 
-## Composing mods: noun contracts
+# 📁 目录
 
-A mod that adds a noun to `$` in the `engine.create` fold owns that noun's
-types, and keeps them in one place: its `types/index.d.ts`, a declaration
-file with no imports that exports the types the noun is made of, each named
-for the noun, and declares the noun on `EngineInterface` in `claude-code`
-(`telemetry/types/index.d.ts` exports `Telemetry`, `TelemetryLogEntry`,
-`TelemetryMarkEntry` and the rest, and declares `$.telemetry`).
+```
+mods/
+├── agents-md/       # AGENTS.md 加载插件
+├── diff/            # Diff 面板插件
+├── sec-default/     # 组织安全默认插件
+├── telemetry/       # 遥测插件
+├── types/           # 共享类型声明
+└── tsconfig.json    # 全量类型检查配置
+```
 
-- The contract is the only declaration of the noun. The mod's own hooks
-  import its types from the folder (`import type { Telemetry } from
-  '../types'`), and the value its `engine.create` hook returns is checked
-  against `EngineInterface['telemetry']`, so the implementation cannot drift
-  from what callers read.
-- A mod that calls another's noun reads the same file and never copies it:
-  `mods/tsconfig.json` includes `*/types/**/*.d.ts`, so `$.telemetry.log(…)`
-  in `diff` types against `telemetry`'s contract as it stands, and a helper
-  that must name one of its types imports it from that folder by path.
-- A test of a mod that calls another's noun seats a provider for it, an inline
-  plugin whose `engine.create` hook adds the noun, and answers the calls the
-  way it answers the engine's: `on('telemetry.log', ($, e) => ({ value:
-  undefined }))` runs above the provider's own method, its `e` typed by the
-  contract. With no provider loaded the `$` build refuses the hook, naming the
-  noun nobody provides.
+---
 
-A plugin outside this repository that depends on a mod's noun points its
-tsconfig `include` at that mod's `types/` folder for now; once the engine
-writes the contracts of the plugins a session has installed, `/plugin-types`
-will put them beside `claude-code.d.ts` and the include goes away.
+# 🔗 资源
 
-Early access: hooks modules load only where function hooks are enabled, and
-the API these mods are written against may change between releases without
-notice. They are not listed in this repository's marketplace; the copies that
-matter are the ones already in your Claude Code.
+- 运行单个 mod：`claude --plugin-dir mods/diff`
+- 测试单个 mod：`claude plugin test mods/diff`
+- 类型检查：`tsc -p mods/tsconfig.json`
+
+> 注意：hooks modules 仅在 function hooks 启用时加载，API 可能在未来版本中变化（early access）。这些 mod 不在 marketplace 中列出——重要的是已经内建于你的 Claude Code 中的副本。
+
+---
+
+# 🚀 快速开始
+
+```sh
+# 运行某个 mod 的源码版本
+claude --plugin-dir mods/diff
+
+# 测试某个 mod
+claude plugin test mods/agents-md
+```
+
+---
+
+# ⚙️ 技术栈
+
+- TypeScript
+- Claude Code Plugin API (hooks system)
+- 类型系统：自定义 `.d.ts` 声明扩展 `EngineInterface`

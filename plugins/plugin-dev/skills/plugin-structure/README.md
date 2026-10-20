@@ -1,8 +1,22 @@
+---
+title: Plugin Structure Skill
+tags: [plugin, structure, skill, claude-code, architecture]
+category: claude-code-plugin-dev
+created: 2025-06-01
+updated: 2026-10-20
+source: claude-code/plugins/plugin-dev/skills/plugin-structure
+type: skill
+status: active
+lifecycle: stable
+---
+
 # Plugin Structure Skill
 
 Comprehensive guidance on Claude Code plugin architecture, directory layout, and best practices.
 
-## Overview
+---
+
+## 💡 概述
 
 This skill provides detailed knowledge about:
 - Plugin directory structure and organization
@@ -12,9 +26,13 @@ This skill provides detailed knowledge about:
 - Portable path references with `${CLAUDE_PLUGIN_ROOT}`
 - File naming conventions
 
-## Skill Structure
+---
 
-### SKILL.md (1,619 words)
+## ⚡ 功能
+
+### Skill Structure
+
+#### SKILL.md (1,619 words)
 
 Core skill content covering:
 - Directory structure overview
@@ -27,7 +45,7 @@ Core skill content covering:
 - Common patterns
 - Troubleshooting
 
-### References
+#### References
 
 Detailed documentation for deep dives:
 
@@ -47,7 +65,7 @@ Detailed documentation for deep dives:
   - Cross-component patterns
   - Best practices for scalability
 
-### Examples
+#### Examples
 
 Three complete plugin examples:
 
@@ -70,7 +88,7 @@ Three complete plugin examples:
   - Security automation
   - Monitoring integration
 
-## When This Skill Triggers
+### When This Skill Triggers
 
 Claude Code activates this skill when users:
 - Ask to "create a plugin" or "scaffold a plugin"
@@ -82,7 +100,7 @@ Claude Code activates this skill when users:
 - Need "configure auto-discovery" help
 - Ask about plugin architecture or best practices
 
-## Progressive Disclosure
+### Progressive Disclosure
 
 The skill uses progressive disclosure to manage context:
 
@@ -92,14 +110,22 @@ The skill uses progressive disclosure to manage context:
 
 Claude loads references and examples only as needed based on the task.
 
-## Related Skills
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
 
 This skill works well with:
 - **hook-development**: For creating plugin hooks
 - **mcp-integration**: For integrating MCP servers (when available)
 - **marketplace-publishing**: For publishing plugins (when available)
 
-## Maintenance
+### Maintenance
 
 To update this skill:
 1. Keep SKILL.md lean and focused on core concepts
@@ -107,3 +133,27 @@ To update this skill:
 3. Add new examples/ for common patterns
 4. Update version in SKILL.md frontmatter
 5. Ensure all documentation uses imperative/infinitive form
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+「待补充」
+
+---
+
+## 🚀 快速开始
+
+「待补充」
+
+---
+
+## ⚙️ 技术栈
+
+「待补充」

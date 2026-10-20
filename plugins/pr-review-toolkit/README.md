@@ -1,14 +1,32 @@
+---
+title: PR Review Toolkit
+tags: [pr-review, code-review, agent, testing, quality, comment-analysis, error-handling, type-design, code-simplification]
+category: claude-code-plugins
+created: 2025-07-01
+updated: 2026-10-20
+source: claude-code/plugins/pr-review-toolkit
+type: plugin
+status: active
+lifecycle: stable
+---
+
 # PR Review Toolkit
 
 A comprehensive collection of specialized agents for thorough pull request review, covering code comments, test coverage, error handling, type design, code quality, and code simplification.
 
-## Overview
+---
+
+## 💡 概述
 
 This plugin bundles 6 expert review agents that each focus on a specific aspect of code quality. Use them individually for targeted reviews or together for comprehensive PR analysis.
 
-## Agents
+---
 
-### 1. comment-analyzer
+## ⚡ 功能
+
+### Agents
+
+#### 1. comment-analyzer
 **Focus**: Code comment accuracy and maintainability
 
 **Analyzes:**
@@ -29,7 +47,7 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 "Analyze comments for technical debt"
 ```
 
-### 2. pr-test-analyzer
+#### 2. pr-test-analyzer
 **Focus**: Test coverage quality and completeness
 
 **Analyzes:**
@@ -50,7 +68,7 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 "Are there any critical test gaps?"
 ```
 
-### 3. silent-failure-hunter
+#### 3. silent-failure-hunter
 **Focus**: Error handling and silent failures
 
 **Analyzes:**
@@ -71,7 +89,7 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 "Analyze catch blocks in this PR"
 ```
 
-### 4. type-design-analyzer
+#### 4. type-design-analyzer
 **Focus**: Type design quality and invariants
 
 **Analyzes:**
@@ -92,7 +110,7 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 "Check if this type has strong invariants"
 ```
 
-### 5. code-reviewer
+#### 5. code-reviewer
 **Focus**: General code review for project guidelines
 
 **Analyzes:**
@@ -113,7 +131,7 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 "Review this code before I commit"
 ```
 
-### 6. code-simplifier
+#### 6. code-simplifier
 **Focus**: Code simplification and refactoring
 
 **Analyzes:**
@@ -137,9 +155,9 @@ This plugin bundles 6 expert review agents that each focus on a specific aspect 
 
 **Note**: This agent preserves functionality while improving code structure and maintainability.
 
-## Usage Patterns
+### Usage Patterns
 
-### Individual Agent Usage
+#### Individual Agent Usage
 
 Simply ask questions that match an agent's focus area, and Claude will automatically trigger the appropriate agent:
 
@@ -154,7 +172,7 @@ Simply ask questions that match an agent's focus area, and Claude will automatic
 → Triggers comment-analyzer
 ```
 
-### Comprehensive PR Review
+#### Comprehensive PR Review
 
 For thorough PR review, ask for multiple aspects:
 
@@ -169,30 +187,18 @@ For thorough PR review, ask for multiple aspects:
 
 This will trigger all relevant agents to analyze different aspects of your PR.
 
-### Proactive Review
+#### Proactive Review
 
 Claude may proactively use these agents based on context:
 
-- **After writing code** → code-reviewer
-- **After adding docs** → comment-analyzer
-- **Before creating PR** → Multiple agents as appropriate
-- **After adding types** → type-design-analyzer
+- **After writing code** -> code-reviewer
+- **After adding docs** -> comment-analyzer
+- **Before creating PR** -> Multiple agents as appropriate
+- **After adding types** -> type-design-analyzer
 
-## Installation
+### Agent Details
 
-Install from your personal marketplace:
-
-```bash
-/plugins
-# Find "pr-review-toolkit"
-# Install
-```
-
-Or add manually to settings if needed.
-
-## Agent Details
-
-### Confidence Scoring
+#### Confidence Scoring
 
 Agents provide confidence scores for their findings:
 
@@ -208,7 +214,7 @@ Agents provide confidence scores for their findings:
 
 **code-simplifier**: Identifies complexity and suggests simplifications
 
-### Output Formats
+#### Output Formats
 
 All agents provide structured, actionable output:
 - Clear issue identification
@@ -217,9 +223,9 @@ All agents provide structured, actionable output:
 - Suggestions for improvement
 - Prioritized by severity
 
-## Best Practices
+### Best Practices
 
-### When to Use Each Agent
+#### When to Use Each Agent
 
 **Before Committing:**
 - code-reviewer (general quality)
@@ -238,7 +244,7 @@ All agents provide structured, actionable output:
 - Any agent for specific concerns raised
 - Targeted re-review after fixes
 
-### Running Multiple Agents
+#### Running Multiple Agents
 
 You can request multiple agents to run in parallel or sequentially:
 
@@ -252,7 +258,7 @@ You can request multiple agents to run in parallel or sequentially:
 "First review test coverage, then check code quality"
 ```
 
-## Tips
+### Tips
 
 - **Be specific**: Target specific agents for focused review
 - **Use proactively**: Run before creating PRs, not after
@@ -260,9 +266,9 @@ You can request multiple agents to run in parallel or sequentially:
 - **Iterate**: Run again after fixes to verify
 - **Don't over-use**: Focus on changed code, not entire codebase
 
-## Troubleshooting
+### Troubleshooting
 
-### Agent Not Triggering
+#### Agent Not Triggering
 
 **Issue**: Asked for review but agent didn't run
 
@@ -271,7 +277,7 @@ You can request multiple agents to run in parallel or sequentially:
 - Mention the agent type explicitly
 - Reference the specific concern (e.g., "test coverage")
 
-### Agent Analyzing Wrong Files
+#### Agent Analyzing Wrong Files
 
 **Issue**: Agent reviewing too much or wrong files
 
@@ -280,34 +286,74 @@ You can request multiple agents to run in parallel or sequentially:
 - Reference the PR number or branch
 - Mention "recent changes" or "git diff"
 
-## Integration with Workflow
+### Integration with Workflow
 
 This plugin works great with:
 - **build-validator**: Run build/tests before review
 - **Project-specific agents**: Combine with your custom agents
 
 **Recommended workflow:**
-1. Write code → **code-reviewer**
-2. Fix issues → **silent-failure-hunter** (if error handling)
-3. Add tests → **pr-test-analyzer**
-4. Document → **comment-analyzer**
-5. Review passes → **code-simplifier** (polish)
+1. Write code -> **code-reviewer**
+2. Fix issues -> **silent-failure-hunter** (if error handling)
+3. Add tests -> **pr-test-analyzer**
+4. Document -> **comment-analyzer**
+5. Review passes -> **code-simplifier** (polish)
 6. Create PR
 
-## Contributing
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+「待补充」
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Contributing
 
 Found issues or have suggestions? These agents are maintained in:
 - User agents: `~/.claude/agents/`
 - Project agents: `.claude/agents/` in claude-cli-internal
 
-## License
+### License
 
 MIT
 
-## Author
+### Author
 
 Daisy (daisy@anthropic.com)
 
 ---
 
+## 🚀 快速开始
+
+Install from your personal marketplace:
+
+```bash
+/plugins
+# Find "pr-review-toolkit"
+# Install
+```
+
+Or add manually to settings if needed.
+
 **Quick Start**: Just ask for review and the right agent will trigger automatically!
+
+---
+
+## ⚙️ 技术栈
+
+「待补充」

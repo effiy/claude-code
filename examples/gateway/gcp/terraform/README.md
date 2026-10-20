@@ -1,11 +1,57 @@
+---
+title: Claude Gateway — Terraform (Cloud Run)
+tags:
+  - claude
+  - gateway
+  - gcp
+  - terraform
+  - cloud-run
+  - cloud-sql
+  - secret-manager
+  - artifact-registry
+category: deployment
+created: 2025-06-15
+updated: 2026-10-20
+source: claude-code/examples/gateway/gcp/terraform
+type: reference
+status: stable
+lifecycle: production
+---
+
 # Claude Gateway — Terraform (Cloud Run)
+
+## 💡 概述
 
 Terraform equivalent of `../setup.sh`. Lets end-users provision and manage
 the gateway with `terraform apply`. Covers the same scope ([walkthrough](https://code.claude.com/docs/en/claude-apps-gateway-on-gcp) §1–7): APIs →
 service account + IAM → Artifact Registry repo → VPC + Private Services Access →
 private-IP Cloud SQL (PG16) → secrets → Cloud Run with Direct VPC egress.
 
-## Files
+---
+
+## ⚡ 功能
+
+- Terraform provisioning of the full GCP gateway architecture
+- Cloud Run service with Direct VPC egress
+- Private-IP Cloud SQL for PostgreSQL (PG16) with Private Services Access
+- Secret Manager integration for database URL, JWT secret, and OIDC client secret
+- Artifact Registry repository for container images
+- IAM service account with least-privilege bindings
+- Deletion protection on Cloud SQL and Cloud Run with configurable guard rails
+- Internal-only ingress by default with optional internal load balancer support
+- Remote state support via GCS backend
+
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+### Files
 
 | File | Purpose |
 |------|---------|
@@ -15,7 +61,7 @@ private-IP Cloud SQL (PG16) → secrets → Cloud Run with Direct VPC egress.
 | `outputs.tf` | Service URL, OAuth redirect URI, SA, DB info |
 | `terraform.tfvars.example` | Copy to `terraform.tfvars` and edit |
 
-## Prerequisites
+### Prerequisites
 
 1. **`../gateway.yaml` created and filled in** — copy the template first:
    `cp ../gateway.yaml.example ../gateway.yaml`, then replace every `REPLACE_ME`
@@ -25,7 +71,85 @@ private-IP Cloud SQL (PG16) → secrets → Cloud Run with Direct VPC egress.
    `gateway.yaml` is gitignored; the committed template is `gateway.yaml.example`.
 2. A **remote backend** for shared use (see below). State holds secrets — never commit it.
 
-## Deploy
+### Guard rails
+
+Tuned so accidental deletion is hard but greenfield teardown stays easy:
+
+- `deletion_protection = true` (variable, default true) on Cloud SQL and Cloud Run —
+  blocks accidental deletion; set `false` when you intend to `terraform destroy`.
+- `disable_on_destroy = false` on APIs — tearing down config never disables APIs.
+- `deletion_policy = ABANDON` on the PSA peering — never tears down the
+  service-networking peering automatically (it's shared by every private-IP
+  service on the VPC). On the dedicated VPC this module creates, that means
+  `terraform destroy` stops at the network step; delete the peering manually
+  per the teardown note below.
+- IAM uses non-authoritative `_member` resources, so other project/secret bindings
+  are never clobbered.
+
+### Private access (internal ingress) — the default
+
+By default the service has **no public URL** (`ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"`),
+and there is no public-ingress option: Claude Code's `/login` rejects gateway hosts that
+resolve to public addresses, so public exposure cannot serve clients. Reach the service
+from inside the VPC, or via the private-access plumbing below.
+
+With internal-only ingress, `public_url` stays the `run.app` URL (Google-managed cert) —
+**no load balancer or your own certificate required**. But internal ingress alone does
+**not** let corporate on-prem clients reach `run.app`; that needs **operator /
+network-team-owned** plumbing that Cloud Run does **not** create for you (validate it's in
+place before relying on internal ingress):
+
+1. A **Private Service Connect endpoint** for Google APIs (an internal VIP in the VPC).
+2. A **Cloud DNS private zone for `run.app`** resolving `*.run.app` to that endpoint IP.
+3. **On-prem routing** to the endpoint over Cloud VPN / Interconnect.
+
+This is normally managed centrally in the network/hub project, so the module does not
+provision it. See [Private networking and Cloud Run](https://cloud.google.com/run/docs/securing/private-networking).
+For a greenfield trial without this plumbing, complete the OAuth bootstrap from inside
+the VPC — e.g. a browser proxied through an in-VPC VM (SSH SOCKS tunnel over IAP).
+
+For a **custom internal hostname or your own TLS cert**, use
+`INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` and front the service with your own internal
+Application Load Balancer (also not provisioned by this module).
+
+### Remote state (recommended for teams)
+
+Add a backend so state is shared and locked (and out of git):
+
+```hcl
+# backend.tf
+terraform {
+  backend "gcs" {
+    bucket = "<your-tf-state-bucket>"
+    prefix = "claude-gateway/cloudrun"
+  }
+}
+```
+
+---
+
+## 📁 目录
+
+| File | Purpose |
+|------|---------|
+| `versions.tf` | Provider pins (google, random) |
+| `variables.tf` | All inputs (defaults match `setup.sh`'s) |
+| `main.tf` | Resources |
+| `outputs.tf` | Service URL, OAuth redirect URI, SA, DB info |
+| `terraform.tfvars.example` | Copy to `terraform.tfvars` and edit |
+
+---
+
+## 🔗 资源
+
+- **Walkthrough**: https://code.claude.com/docs/en/claude-apps-gateway-on-gcp
+- **Private networking and Cloud Run**: https://cloud.google.com/run/docs/securing/private-networking
+
+---
+
+## 🚀 快速开始
+
+### Deploy
 
 Terraform creates the Artifact Registry repo but does **not** build/push the
 image, so the apply is two passes: a targeted apply to create the repo, then
@@ -77,14 +201,16 @@ Set in `terraform.tfvars`:
 - `ingress` — defaults to **internal-only** (no public URL). Claude Code's `/login`
   only accepts gateway hosts on private addresses, so public ingress cannot serve
   clients; the two-pass OAuth bootstrap must be completed from inside the VPC (or a
-  PSC-connected corp network). See "Private access" below.
+  PSC-connected corp network). See "Private access" above.
+
+### Tear down
 
 Tear down a trial with `terraform destroy`: set `deletion_protection = false`,
 run `terraform apply` to record that in state (the provider checks the value in
 **state**, not config, so destroy would still refuse otherwise), then `terraform
 destroy`. The destroy will stop at the VPC network
 because the Private Services Access peering is intentionally left in place
-(`deletion_policy = ABANDON` — see Guard rails below); finish by deleting the
+(`deletion_policy = ABANDON` — see Guard rails above); finish by deleting the
 peering manually once the Cloud SQL instance is gone, then re-run destroy:
 
 ```bash
@@ -93,62 +219,7 @@ gcloud services vpc-peerings delete --service=servicenetworking.googleapis.com \
 terraform destroy
 ```
 
-## Guard rails
-
-Tuned so accidental deletion is hard but greenfield teardown stays easy:
-
-- `deletion_protection = true` (variable, default true) on Cloud SQL and Cloud Run —
-  blocks accidental deletion; set `false` when you intend to `terraform destroy`.
-- `disable_on_destroy = false` on APIs — tearing down config never disables APIs.
-- `deletion_policy = ABANDON` on the PSA peering — never tears down the
-  service-networking peering automatically (it's shared by every private-IP
-  service on the VPC). On the dedicated VPC this module creates, that means
-  `terraform destroy` stops at the network step; delete the peering manually
-  per the teardown note above.
-- IAM uses non-authoritative `_member` resources, so other project/secret bindings
-  are never clobbered.
-
-## Private access (internal ingress) — the default
-
-By default the service has **no public URL** (`ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"`),
-and there is no public-ingress option: Claude Code's `/login` rejects gateway hosts that
-resolve to public addresses, so public exposure cannot serve clients. Reach the service
-from inside the VPC, or via the private-access plumbing below.
-
-With internal-only ingress, `public_url` stays the `run.app` URL (Google-managed cert) —
-**no load balancer or your own certificate required**. But internal ingress alone does
-**not** let corporate on-prem clients reach `run.app`; that needs **operator /
-network-team-owned** plumbing that Cloud Run does **not** create for you (validate it's in
-place before relying on internal ingress):
-
-1. A **Private Service Connect endpoint** for Google APIs (an internal VIP in the VPC).
-2. A **Cloud DNS private zone for `run.app`** resolving `*.run.app` to that endpoint IP.
-3. **On-prem routing** to the endpoint over Cloud VPN / Interconnect.
-
-This is normally managed centrally in the network/hub project, so the module does not
-provision it. See [Private networking and Cloud Run](https://cloud.google.com/run/docs/securing/private-networking).
-For a greenfield trial without this plumbing, complete the OAuth bootstrap from inside
-the VPC — e.g. a browser proxied through an in-VPC VM (SSH SOCKS tunnel over IAP).
-
-For a **custom internal hostname or your own TLS cert**, use
-`INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER` and front the service with your own internal
-Application Load Balancer (also not provisioned by this module).
-
-## Remote state (recommended for teams)
-
-Add a backend so state is shared and locked (and out of git):
-
-```hcl
-# backend.tf
-terraform {
-  backend "gcs" {
-    bucket = "<your-tf-state-bucket>"
-    prefix = "claude-gateway/cloudrun"
-  }
-}
-```
-
-## After deploy
+### After deploy
 
 - `terraform output service_url` / `oauth_redirect_uri`.
 - Register the redirect URI on the Google OAuth client and make sure
@@ -158,3 +229,16 @@ terraform {
   re-apply under an unchanged tag does **not** roll a new revision (Cloud Run
   resolves the tag to a digest only at revision creation, and an unchanged
   `image` attribute means no new revision).
+
+---
+
+## ⚙️ 技术栈
+
+- **IaC**: Terraform (google, random providers)
+- **Compute**: Google Cloud Run (Direct VPC egress)
+- **Database**: Cloud SQL for PostgreSQL 16 (private IP, Private Services Access)
+- **Secrets**: Secret Manager
+- **Container Registry**: Artifact Registry
+- **Auth**: IAM service account, OAuth 2.0 (Google Workspace IdP)
+- **Networking**: VPC, Private Services Connect, Cloud DNS
+- **Optional**: Internal Application Load Balancer, Cloud VPN / Interconnect

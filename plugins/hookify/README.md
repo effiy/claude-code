@@ -1,8 +1,20 @@
+---
+title: Hookify Plugin
+tags: [claude-code, plugin, hooks, automation, security, rule-management]
+category: plugin
+created: 2025-03-15
+updated: 2026-10-20
+source: claude-code-marketplace
+type: README
+status: published
+lifecycle: stable
+---
+
 # Hookify Plugin
 
-Easily create custom hooks to prevent unwanted behaviors by analyzing conversation patterns or from explicit instructions.
+---
 
-## Overview
+## 💡 概述
 
 The hookify plugin makes it simple to create hooks without editing complex `hooks.json` files. Instead, you create lightweight markdown configuration files that define patterns to watch for and messages to show when those patterns match.
 
@@ -13,28 +25,9 @@ The hookify plugin makes it simple to create hooks without editing complex `hook
 - 🚀 No coding required - just describe the behavior
 - 🔄 Easy enable/disable without restarting
 
-## Quick Start
+---
 
-### 1. Create Your First Rule
-
-```bash
-/hookify Warn me when I use rm -rf commands
-```
-
-This analyzes your request and creates `.claude/hookify.warn-rm.local.md`.
-
-### 2. Test It Immediately
-
-**No restart needed!** Rules take effect on the very next tool use.
-
-Ask Claude to run a command that should trigger the rule:
-```
-Run rm -rf /tmp/test
-```
-
-You should see the warning message immediately!
-
-## Usage
+## ⚡ 功能
 
 ### Main Command: /hookify
 
@@ -68,9 +61,9 @@ Enable/disable existing rules through an interactive interface.
 /hookify:help
 ```
 
-## Rule Configuration Format
+### Rule Configuration Format
 
-### Simple Rule (Single Pattern)
+#### Simple Rule (Single Pattern)
 
 `.claude/hookify.dangerous-rm.local.md`:
 ```markdown
@@ -94,7 +87,7 @@ This command could delete important files. Please:
 - `warn`: Shows warning but allows operation (default)
 - `block`: Prevents operation from executing (PreToolUse) or stops session (Stop events)
 
-### Advanced Rule (Multiple Conditions)
+#### Advanced Rule (Multiple Conditions)
 
 `.claude/hookify.sensitive-files.local.md`:
 ```markdown
@@ -119,7 +112,7 @@ Ensure credentials are not hardcoded and file is in .gitignore.
 
 **All conditions must match** for the rule to trigger.
 
-## Event Types
+### Event Types
 
 - **`bash`**: Triggers on Bash tool commands
 - **`file`**: Triggers on Edit, Write, MultiEdit tools
@@ -127,7 +120,7 @@ Ensure credentials are not hardcoded and file is in .gitignore.
 - **`prompt`**: Triggers on user prompt submission
 - **`all`**: Triggers on all events
 
-## Pattern Syntax
+### Pattern Syntax
 
 Use Python regex syntax:
 
@@ -147,9 +140,9 @@ Use Python regex syntax:
 - Set `action: block` for dangerous operations
 - Set `action: warn` (or omit) for informational warnings
 
-## Examples
+### Examples
 
-### Example 1: Block Dangerous Commands
+#### Example 1: Block Dangerous Commands
 
 ```markdown
 ---
@@ -168,7 +161,7 @@ Please verify the exact path and use a safer approach.
 
 **This rule blocks the operation** - Claude will not be allowed to execute these commands.
 
-### Example 2: Warn About Debug Code
+#### Example 2: Warn About Debug Code
 
 ```markdown
 ---
@@ -186,7 +179,7 @@ Remember to remove debugging statements before committing.
 
 **This rule warns but allows** - Claude sees the message but can still proceed.
 
-### Example 3: Require Tests Before Stopping
+#### Example 3: Require Tests Before Stopping
 
 ```markdown
 ---
@@ -207,9 +200,49 @@ Before stopping, please run tests to verify your changes work correctly.
 
 **This blocks Claude from stopping** if no test commands appear in the session transcript. Enable only when you want strict enforcement.
 
-## Advanced Usage
+### Management
 
-### Multiple Conditions
+#### Enable/Disable Rules
+
+**Temporarily disable:**
+Edit the `.local.md` file and set `enabled: false`
+
+**Re-enable:**
+Set `enabled: true`
+
+**Or use interactive tool:**
+```
+/hookify:configure
+```
+
+#### Delete Rules
+
+Simply delete the `.local.md` file:
+```bash
+rm .claude/hookify.my-rule.local.md
+```
+
+#### View All Rules
+
+```
+/hookify:list
+```
+
+---
+
+## 📊 指标
+
+- **Python 3.7+** required
+- No external dependencies (uses stdlib only)
+- Rules take effect immediately - no restart needed
+
+---
+
+## 🏛️ 设计
+
+### Advanced Usage
+
+#### Multiple Conditions
 
 Check multiple fields simultaneously:
 
@@ -232,7 +265,7 @@ conditions:
 Use environment variables instead of hardcoded values.
 ```
 
-### Operators Reference
+#### Operators Reference
 
 - `regex_match`: Pattern must match (most common)
 - `contains`: String must contain pattern
@@ -241,7 +274,7 @@ Use environment variables instead of hardcoded values.
 - `starts_with`: String starts with pattern
 - `ends_with`: String ends with pattern
 
-### Field Reference
+#### Field Reference
 
 **For bash events:**
 - `command`: The bash command string
@@ -258,35 +291,17 @@ Use environment variables instead of hardcoded values.
 **For stop events:**
 - Use general matching on session state
 
-## Management
+---
 
-### Enable/Disable Rules
+## 📁 目录
 
-**Temporarily disable:**
-Edit the `.local.md` file and set `enabled: false`
+「待补充」
 
-**Re-enable:**
-Set `enabled: true`
+---
 
-**Or use interactive tool:**
-```
-/hookify:configure
-```
+## 🔗 资源
 
-### Delete Rules
-
-Simply delete the `.local.md` file:
-```bash
-rm .claude/hookify.my-rule.local.md
-```
-
-### View All Rules
-
-```
-/hookify:list
-```
-
-## Installation
+### Installation
 
 This plugin is part of the Claude Code Marketplace. It should be auto-discovered when the marketplace is installed.
 
@@ -295,12 +310,7 @@ This plugin is part of the Claude Code Marketplace. It should be auto-discovered
 cc --plugin-dir /path/to/hookify
 ```
 
-## Requirements
-
-- Python 3.7+
-- No external dependencies (uses stdlib only)
-
-## Troubleshooting
+### Troubleshooting
 
 **Rule not triggering:**
 1. Check rule file exists in `.claude/` directory (in project root, not plugin directory)
@@ -323,11 +333,11 @@ cc --plugin-dir /path/to/hookify
 - Use specific event types (bash, file) instead of "all"
 - Limit number of active rules
 
-## Contributing
+### Contributing
 
 Found a useful rule pattern? Consider sharing example files via PR!
 
-## Future Enhancements
+### Future Enhancements
 
 - Severity levels (error/warning/info distinctions)
 - Rule templates library
@@ -335,6 +345,39 @@ Found a useful rule pattern? Consider sharing example files via PR!
 - Hook testing utilities
 - JSON format support (in addition to markdown)
 
-## License
+### License
 
 MIT License
+
+---
+
+## 🚀 快速开始
+
+### 1. Create Your First Rule
+
+```bash
+/hookify Warn me when I use rm -rf commands
+```
+
+This analyzes your request and creates `.claude/hookify.warn-rm.local.md`.
+
+### 2. Test It Immediately
+
+**No restart needed!** Rules take effect on the very next tool use.
+
+Ask Claude to run a command that should trigger the rule:
+```
+Run rm -rf /tmp/test
+```
+
+You should see the warning message immediately!
+
+---
+
+## ⚙️ 技术栈
+
+- **Runtime:** Python 3.7+
+- **Dependencies:** stdlib only (no external packages)
+- **Platform:** Claude Code plugin system
+- **Config format:** Markdown with YAML frontmatter
+- **Pattern engine:** Python `re` (standard regex)

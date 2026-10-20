@@ -143,7 +143,7 @@ mkdir -p plugin-name/skills/skill-name/{references,examples,scripts}
 touch plugin-name/skills/skill-name/SKILL.md
 ```
 
-**Note:** Unlike the generic skill-creator which uses `init_skill.py`, plugin skills are created directly in the plugin's `skills/` directory with a simpler manual structure.
+**Note:** Unlike the generic rui which uses `init_skill.py`, plugin skills are created directly in the plugin's `skills/` directory with a simpler manual structure.
 
 ### Step 4: Edit the Skill
 
@@ -615,8 +615,8 @@ Plugin-dev's skills demonstrate best practices:
 
 ### Reference Files
 
-For complete skill-creator methodology:
-- **`references/skill-creator-original.md`** - Full original skill-creator content
+For complete rui methodology:
+- **`references/rui-original.md`** - Full original rui content
 
 ## Implementation Workflow
 

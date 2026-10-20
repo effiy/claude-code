@@ -1,169 +1,119 @@
-# agents-md
+---
+title: agents-md — AGENTS.md as Claude Code Project Instructions
+tags: [claude-code, plugin, builtin, agents-md, instruction-files, AGENTS.md, CLAUDE.md]
+category: claude-code-mods
+created: 2025-06-15
+updated: 2026-10-20
+source: claude-code/mods/agents-md
+type: plugin
+status: builtin
+lifecycle: stable
+---
 
-`AGENTS.md` read the way Claude Code reads `CLAUDE.md`, as a plugin, under
-one option, `instructionFiles`:
+# 💡 概述
 
-- `claude-md`: only `CLAUDE.md` is loaded, by the engine, as today. The plugin
-  adds nothing.
-- `claude-md-or-agents-md` (the default): a project with no instruction files
-  of its own gets its `AGENTS.md` files instead, loaded exactly where and how
-  `CLAUDE.md` would be. "Of its own" is read off what the engine loaded for
-  the context: a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` in any
-  directory from the root down to the working directory leaves the whole
-  project to the engine, and the plugin stays out (the organization's managed
-  file, the person's `~/.claude/CLAUDE.md`, a `.claude/rules` file and an
-  added directory's `CLAUDE.md` do not count, as the nested walk does not see
-  them either). With none, every `AGENTS.md` and `.claude/AGENTS.md` on that
-  path joins the instruction files the engine renders, and a `Read` under a
-  subdirectory attaches that directory's `AGENTS.md` unless a `CLAUDE.md`
-  there claims it.
-- `claude-md-and-agents-md`: every `AGENTS.md` is loaded beside `CLAUDE.md`,
-  up and down the tree; a file `CLAUDE.md` already `@`-imports, or is a link
-  to, is not loaded a second time (compared by path, then by content).
-- `managed-only`: the project's checked-in and private instruction files and
-  the person's own are dropped from the context; the organization's managed
-  `CLAUDE.md` and the engine's memory stay. The engine's nested `CLAUDE.md`
-  attachments on `Read` are not an event yet and still arrive. (The engine's
-  `claudeMdExcludes` setting also exists, for user, project and local files,
-  and applies to the `AGENTS.md` files this plugin reads too.)
+`agents-md` 是 Claude Code 内建插件，将 `AGENTS.md` 文件作为项目 instruction file 加载，与引擎读取 `CLAUDE.md` 的方式一致。插件通过一个选项 `instructionFiles` 控制四种模式：
 
-How the files reach the model is the engine's doing, not the plugin's:
-`prompt.context` hands a hook the instruction files behind `claudeMd`
-(`{ path, kind, content, parent? }`, kinds `managed`, `user`, `project`,
-`local`, `memory`, in load order) and a hook answers the list changed. The
-engine then renders `claudeMd` from the answered files with its own preamble
-and framing, announces them by name, and keeps only the `managed` ones for an
-agent that omits project instructions (Explore, Plan, a custom agent with
-`omitClaudeMd`). So an `AGENTS.md` this plugin adds as a `project` file is, to
-everything downstream, a project instruction file: same place in the context,
-same framing, same omission rules, same announcement. An organization's
-prepended plugin on `prompt.context` sits above this one and has the last
-word on the files.
+- `claude-md`：仅加载 `CLAUDE.md`，与当前行为一致。
+- `claude-md-or-agents-md`（默认）：项目中无自有 instruction file（`CLAUDE.md`、`.claude/CLAUDE.md`、`CLAUDE.local.md`）时，加载 `AGENTS.md`，放置和框架方式与 `CLAUDE.md` 完全相同。
+- `claude-md-and-agents-md`：`AGENTS.md` 与 `CLAUDE.md` 并列加载。
+- `managed-only`：仅保留组织的托管 instruction file 和引擎 memory，丢弃项目及个人的 instruction file。
 
-`hooks/register.ts` is the module; everything under `hooks/` is its parts,
-importing `claude-code` and one another alone. `tests/` runs under
-`claude plugin test <this folder>`.
+---
 
-## Setting the option
+# ⚡ 功能
 
-As a built-in its option is the `/config` row "Project instructions", a
-picker over the four values, each described there. By hand it is
+- 四种 instruction file 加载模式，通过 `/config` "Project instructions" 选项或 `pluginConfigs` JSON 配置。
+- `AGENTS.md` 文件以 `prompt.context` hook 注入，引擎以 `claudeMd` 框架渲染，与 `CLAUDE.md` 地位完全对等。
+- 嵌套 `AGENTS.md`：在 `Read` 工具读取子目录文件时自动附加该目录下的 `AGENTS.md`（在 `claude-md-or-agents-md` 和 `claude-md-and-agents-md` 模式下）。
+- `agent.spawn` fork 继承父代理的 instruction file 集合。
+- 旧键 `projectInstructions` 向下兼容，首次加载时在 transcript 中说明读取方式。
 
-```json
-{
-  "pluginConfigs": {
-    "agents-md@builtin": {
-      "options": { "instructionFiles": "claude-md-and-agents-md" }
-    }
-  }
-}
+---
+
+# 🏛️ 设计
+
+## Hook 架构
+
+| 事件 | 行为 |
+| --- | --- |
+| `session.start` | 记录模式行（usage row），首个 start 记录旧键 `projectInstructions` 的读取方式 |
+| `prompt.context` | 在 `claude-md-or-agents-md` 和 `claude-md-and-agents-md` 下遍历 `$.fs.ancestors` 查找 `AGENTS.md` 并注入为 project instruction files；`managed-only` 下移除 project/local/user 类文件 |
+| `agent.spawn` (fork: true) | fork 继承父代理的 nested file 集合 |
+| `tool.call` (Read) | 在两种 AGENTS.md 模式下，为读取的文件附加路径上尚未交付的 `AGENTS.md` 文件 |
+
+## `$` 依赖
+
+`fs.ancestors`、`session.root`、`session.cwd`、`env.get`、`ui.log`、`telemetry.log`、`telemetry.mark`。
+
+`$.telemetry` 是 [telemetry](../telemetry) 插件的 noun；telemetry 插件未加载时调用无操作。
+
+## 遥测数据
+
+| 事件 | 时机 | 属性 |
+| --- | --- | --- |
+| `agents_md_mode` | 每次新加载，`session.start` 时 | `mode`、`is_interactive` |
+| `agents_md_load` | 首次 context 构建 | `mode`、`file_count`、`import_count`、`total_content_length`、`yielded`、`walk_failed`；附加 `$.telemetry.mark` 标记 `agents_md` 功能状态 |
+| `agents_md_nested` | Read 附加嵌套文件时 | `mode`、`file_count` |
+
+## 与 CLAUDE.md 的已知差异
+
+以下 8 点仅适用于加载 `AGENTS.md` 的模式：
+
+1. 嵌套文件仅在文本 `Read` 时附加（引擎还会在 `@` 提及、IDE 打开文件/选区、Notebook/图片/PDF 结果时附加 `CLAUDE.md`）。
+2. 插件附加的嵌套文件不注册到 loop 的已读状态，compaction 后不恢复（下一次 Read 重新附加）。
+3. `/cd` 变更目录时新目录的 `AGENTS.md` 在下一次请求中通过引擎的 instructions announcement 到达。
+4. 路径比较按字面进行，引擎会先解析 symlink 工作目录。
+5. `--add-dir` 目录不贡献 `AGENTS.md`。
+6. `/memory` 和 `#` 不认识 `AGENTS.md` 文件。
+7. `AGENTS.md` 中对工作区外的 `@` import 需等待引擎为 `CLAUDE.md` external import 批准的对话框后才生效。
+8. 非 fork 子代理在首次 Read 时获取嵌套 `AGENTS.md`，即使父代理已获取过（fork 匹配引擎行为）。
+
+---
+
+# 📁 目录
+
+```
+agents-md/
+├── hooks/
+│   └── register.ts          # 插件入口模块
+├── tests/
+│   └── register.test.ts     # 测试覆盖默认模式
+└── types/
+    └── index.d.ts           # 类型声明
 ```
 
-in user settings (`~/.claude/settings.json`), `--settings`, or managed
-settings; a project's `.claude/settings.json` is not read for plugin
-options. Changing it reloads the module, and the next context the engine
-builds (the next turn after the reload, a new conversation, `/clear`, a
-compaction) carries the new mode's files. A hand-typed value outside the
-four is told once in the transcript and reads as the default. `/plugin`
-lists the plugin among the built-ins, where a person can turn it off; with
-it off the engine reads `CLAUDE.md` alone. No hooks setting or CLI mode turns
-it off (`disableAllHooks`, `allowManagedHooksOnly` and `--bare` govern
-settings hooks and installed plugins, not built-ins); where the engine loads
-no instruction files (`--bare` without `--add-dir`, `--safe-mode`,
-`CLAUDE_CODE_DISABLE_CLAUDE_MDS`) its walk finds none and it adds none,
-`CLAUDE.md` and `AGENTS.md` alike.
+---
 
-The option was first keyed `projectInstructions`, with the values `claude`,
-`agents-fallback`, `both` and `none`. A value still stored under that key is
-honoured for now while `instructionFiles` reads as its default: `none` as
-`managed-only`, `claude` as `claude-md`, `agents-fallback` as
-`claude-md-or-agents-md`, `both` as `claude-md-and-agents-md`, any other
-value as `claude-md` (which adds nothing, never as the default, which loads
-`AGENTS.md`); the first `session.start` of a load says in the transcript how
-it was read. Once `instructionFiles` is set to anything but its default, the
-old key is not read and the transcript says to remove it.
+# 🔗 资源
 
-Run from this folder instead (`claude --plugin-dir mods/agents-md`), the
-same entry is keyed `"agents-md"`.
+- 配置示例：
+  ```json
+  {
+    "pluginConfigs": {
+      "agents-md@builtin": {
+        "options": { "instructionFiles": "claude-md-and-agents-md" }
+      }
+    }
+  }
+  ```
+- 测试命令：`claude plugin test mods/agents-md`
+- 运行源码：`claude --plugin-dir mods/agents-md`
 
-## What it hooks
+---
 
-| event | what the hook does |
-| --- | --- |
-| `session.start` | in every mode: passes the start straight through and floats the usage row for the configured mode, never awaited; the first start of a load logs how a stored `projectInstructions` value is read. The session's start never waits on this plugin |
-| `prompt.context` | under `claude-md-or-agents-md` and `claude-md-and-agents-md`: walks `$.fs.ancestors` for the `AGENTS.md` files above the working directory and answers them as `project` instruction files, each `@` import its own entry after its file, each placed where a project file of its directory stands (root first, before the first deeper project file, else after the last project file, before memory); files the engine already holds by path or by content are left out; under `claude-md-or-agents-md` it answers nothing when the project has a `CLAUDE.md` of its own (among the handed files, else found by a `$.fs.ancestors` walk, so a `CLAUDE.md` the engine loaded and then withheld still counts), and names the files it loaded in the debug log (`$.ui.log` with `to: "debug"`: `no CLAUDE.md found; AGENTS.md loaded: <paths>`, nothing in the transcript) once, and again after a move to another project root; handed unknown files (a hook above rewrote the `claudeMd` text) it adds nothing; the first context of a load sends the load row (counts) and the feature mark; under `managed-only` (matcher: a `project`, `local` or `user` file present): answers the list without those kinds |
-| `agent.spawn` on `fork: true` | under `claude-md-or-agents-md` and `claude-md-and-agents-md`: a fork the Agent tool starts shares its parent's prompt prefix, so the parent loop's delivered nested files are copied to the fork's loop and not attached to it again (a run that resumes a fork is passed on untouched, the fork keeping the set its own loop was given; a `/fork` or `/subtask` fork does not raise `agent.spawn` yet and starts from an empty set, as every fork did before; a fork started in the same tool batch as a `Read` inherits that Read's file although its prefix holds a placeholder for it) |
-| `tool.call` on `Read` | under `claude-md-or-agents-md` and `claude-md-and-agents-md`, for a file under the session's project root (`$.session.root()`, read live, so `/cd`, a host's directory change and worktree moves are followed and a moved root starts the delivered sets and the fallback decision over; a file elsewhere gets nothing, as the engine attaches no nested `CLAUDE.md` there; and nothing anywhere in a run where the engine attaches nothing to a turn, `--bare` with its `CLAUDE_CODE_SIMPLE` or `CLAUDE_CODE_DISABLE_ATTACHMENTS`, read on every Read through `$.env.get` as the engine reads them on every turn): walks only the directories strictly between the root and the read file (`$.fs.ancestors` with `below: root`, as the engine walks only those for a nested `CLAUDE.md`, never up to the filesystem root again) and attaches their `AGENTS.md` files not yet given to that agent loop, not already among the context's instruction files (by path or, for a project file, by text) and not claimed by a `CLAUDE.md` of the same directory (or imported by one), as `context` after the tool result, framed `Contents of <path>:` byte for byte as the engine frames a nested `CLAUDE.md`, whatever its size; each file once per loop and conversation (the context's recomputation after a compaction or `/clear` starts the count over), the context's files never; a Read that attached files sends the nested row. A `~` or `~/` path is read under the home directory as the Read tool reads it |
+# 🚀 快速开始
 
-## What it calls on `$`
+```sh
+claude --plugin-dir mods/agents-md
+```
 
-`fs.ancestors` (with each found file's `parts`: the file and its imports
-apart; with `below` on a Read; it finds nothing on a thin client, whose
-workspace files are remote, as the engine's own walk does), `session.root`,
-`session.cwd`, `env.get` (`HOME` and `USERPROFILE`, once per load, the
-profile first on a Windows spelling of the working directory, so a `~/` path
-the model hands a Read resolves where the Read tool reads it; `CLAUDE_CODE_SIMPLE`
-and `CLAUDE_CODE_DISABLE_ATTACHMENTS` on every Read), `ui.log`,
-`telemetry.log` and `telemetry.mark`.
+内建时已默认加载，可在 `/config` → "Project instructions" 中选择模式。
 
-`$.telemetry` is the [telemetry](../telemetry) plugin's noun; where that
-plugin is not seated the calls find no noun and are dropped without a trace,
-and nothing else changes.
+---
 
-## What it logs
+# ⚙️ 技术栈
 
-Counts and closed choices only; no path and no file text. Each row goes
-through `$.telemetry.log`, so it exists only where the telemetry plugin
-does:
-
-| event | when | properties |
-| --- | --- | --- |
-| `agents_md_mode` | once per fresh load, at `session.start` | `mode` (`claude-md` \| `claude-md-or-agents-md` \| `claude-md-and-agents-md` \| `managed-only`), `is_interactive` |
-| `agents_md_load` | the first context of a load, under `claude-md-or-agents-md` and `claude-md-and-agents-md` | `mode`, `file_count` (`AGENTS.md` files handed to the engine), `import_count` (their `@` imports), `total_content_length`, `yielded` (`claude-md-or-agents-md` stood down for a `CLAUDE.md` of the project's own), `walk_failed`; with it one `$.telemetry.mark` for feature `agents_md`: `ok`, or `sad` with reason `walk_failed` |
-| `agents_md_nested` | a Read that attached nested files | `mode`, `file_count` |
-
-## Where it still differs from CLAUDE.md
-
-All of these apply only to the modes that load `AGENTS.md`,
-`claude-md-or-agents-md` (the default) and `claude-md-and-agents-md`. Each
-names a loader fact a plugin cannot reach through the events it has today.
-
-1. Nested files attach on a text `Read` only. The engine also attaches a
-   directory's `CLAUDE.md` for a file `@`-mentioned in the prompt, for the
-   IDE's opened file or selection, and for the `Read` tool's notebook, image
-   and PDF results.
-2. A nested file the plugin attaches is not registered in the loop's
-   read-file state, so after a compaction the engine does not restore it
-   among the recently read files (the plugin attaches it again at the next
-   `Read` under that directory instead), and a change to it mid-session is
-   not re-announced.
-3. `/cd` carries the new tree's `CLAUDE.md` in its own notice; the plugin's
-   files for the new tree arrive in the same next request through the
-   engine's instructions announcement instead.
-4. Paths compare by spelling; the engine resolves a symlinked alias of the
-   working directory before deciding a file is inside it.
-5. `--add-dir` directories contribute no `AGENTS.md`, where the engine can
-   load their `CLAUDE.md`.
-6. `/memory` and the `#` shortcut do not know `AGENTS.md` files, and the
-   engine's own initial-load row does not count them (this plugin's
-   `agents_md_load` row does).
-7. An `@` import outside the working directory inside an `AGENTS.md` is
-   honoured only once the approval the engine asks for a `CLAUDE.md`'s
-   external imports has been given (without it the import is left out, as a
-   `CLAUDE.md`'s is); the approval dialog itself is raised for `CLAUDE.md`
-   imports alone.
-8. A subagent that is not a fork gets a nested `AGENTS.md` at its own first
-   `Read` under that directory even when its parent's loop was already given
-   it; the engine does not hand such a subagent the nested `CLAUDE.md` again.
-   A fork matches the engine on both sides.
-
-## Testing
-
-    claude plugin test mods/agents-md
-
-`tests/register.test.ts` covers the default mode: a project with `AGENTS.md`
-alone gets it as a project instruction file and one debug-log line naming
-it, with nothing in the transcript, a project with a `CLAUDE.md` of its own is
-left to the engine without a walk, a failed walk leaves the context as handed,
-and the start hands `$.telemetry` the mode row alone where a test seats a
-provider for that noun, and goes on untouched where none is seated.
+- TypeScript
+- Claude Code Plugin API (hooks: `session.start`, `prompt.context`, `agent.spawn`, `tool.call`)
+- 依赖 telemetry 插件 noun（optional）

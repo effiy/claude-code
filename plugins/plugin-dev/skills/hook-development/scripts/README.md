@@ -1,8 +1,28 @@
+---
+title: Hook Development Utility Scripts
+tags: [claude-code, hooks, scripts, validation, testing, linting, bash]
+category: utility
+created: 2025-01-15
+updated: 2026-10-20
+source: plugin-dev toolkit
+type: README
+status: published
+lifecycle: stable
+---
+
 # Hook Development Utility Scripts
 
-These scripts help validate, test, and lint hook implementations before deployment.
+---
 
-## validate-hook-schema.sh
+## 💡 概述
+
+These scripts help validate, test, and lint hook implementations before deployment. They are part of the hook-development skill within the plugin-dev toolkit.
+
+---
+
+## ⚡ 功能
+
+### validate-hook-schema.sh
 
 Validates `hooks.json` configuration files for correct structure and common issues.
 
@@ -26,7 +46,7 @@ cd my-plugin
 ./validate-hook-schema.sh hooks/hooks.json
 ```
 
-## test-hook.sh
+### test-hook.sh
 
 Tests individual hook scripts with sample input before deploying to Claude Code.
 
@@ -59,7 +79,7 @@ Tests individual hook scripts with sample input before deploying to Claude Code.
 - Shows exit codes and their meanings
 - Captures environment file output
 
-## hook-linter.sh
+### hook-linter.sh
 
 Checks hook scripts for common issues and best practices violations.
 
@@ -89,7 +109,7 @@ Checks hook scripts for common issues and best practices violations.
 ./hook-linter.sh ../examples/*.sh
 ```
 
-## Typical Workflow
+### Typical Workflow
 
 1. **Write your hook script**
    ```bash
@@ -127,7 +147,29 @@ Checks hook scripts for common issues and best practices violations.
    claude --debug
    ```
 
-## Tips
+---
+
+## 📊 指标
+
+「待补充」
+
+---
+
+## 🏛️ 设计
+
+「待补充」
+
+---
+
+## 📁 目录
+
+「待补充」
+
+---
+
+## 🔗 资源
+
+### Tips
 
 - Always test hooks before deploying to avoid breaking user workflows
 - Use verbose mode (`-v`) to debug hook behavior
@@ -135,30 +177,76 @@ Checks hook scripts for common issues and best practices violations.
 - Validate hooks.json after any changes
 - Create different test inputs for various scenarios (safe operations, dangerous operations, edge cases)
 
-## Common Issues
+### Common Issues
 
-### Hook doesn't execute
+#### Hook doesn't execute
 
 Check:
 - Script has shebang (`#!/bin/bash`)
 - Script is executable (`chmod +x`)
 - Path in hooks.json is correct (use `${CLAUDE_PLUGIN_ROOT}`)
 
-### Hook times out
+#### Hook times out
 
 - Reduce timeout in hooks.json
 - Optimize hook script performance
 - Remove long-running operations
 
-### Hook fails silently
+#### Hook fails silently
 
 - Check exit codes (should be 0 or 2)
 - Ensure errors go to stderr (`>&2`)
 - Validate JSON output structure
 
-### Injection vulnerabilities
+#### Injection vulnerabilities
 
 - Always quote variables: `"$variable"`
 - Use `set -euo pipefail`
 - Validate all input fields
 - Run the linter to catch issues
+
+---
+
+## 🚀 快速开始
+
+### Typical Workflow
+
+1. **Write your hook script**
+   ```bash
+   vim my-plugin/scripts/my-hook.sh
+   ```
+
+2. **Lint the script**
+   ```bash
+   ./hook-linter.sh my-plugin/scripts/my-hook.sh
+   ```
+
+3. **Create test input**
+   ```bash
+   ./test-hook.sh --create-sample PreToolUse > test-input.json
+   # Edit test-input.json as needed
+   ```
+
+4. **Test the hook**
+   ```bash
+   ./test-hook.sh -v my-plugin/scripts/my-hook.sh test-input.json
+   ```
+
+5. **Add to hooks.json and validate**
+   ```bash
+   ./validate-hook-schema.sh my-plugin/hooks/hooks.json
+   ```
+
+6. **Test in Claude Code**
+   ```bash
+   claude --debug
+   ```
+
+---
+
+## ⚙️ 技术栈
+
+- **Language:** Bash (shell scripting)
+- **Requirements:** Bash shell, `jq` (for JSON validation)
+- **Environment variables:** `CLAUDE_PROJECT_DIR`, `CLAUDE_PLUGIN_ROOT`
+- **Tools:** validate-hook-schema.sh, test-hook.sh, hook-linter.sh
